@@ -8,8 +8,8 @@ import io.circe.Json
 import jawn.Facade
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import org.http4s.{Request, Uri}
 import org.http4s.client.blaze.Http1Client
+import org.http4s.{Request, Uri}
 
 object Client extends HttpClient[Task]
 
@@ -19,7 +19,7 @@ class HttpClient[F[_]](implicit F: Effect[F], S: StreamUtils[F]) extends StreamA
 
   override def stream(args: List[String], requestShutdown: F[Unit]): Stream[F, ExitCode] = {
     Http1Client.stream[F]().flatMap { client =>
-      val request = Request[F](uri = Uri.uri("http://localhost:8080/v1/files"))
+      val request = Request[F](uri = Uri.uri("http://localhost:8080/v1/dirs?depth=3"))
       for {
         response <- client.streaming(request)(_.body.chunks.through(fs2.text.utf8DecodeC))
         _        <- S.putStr(response)

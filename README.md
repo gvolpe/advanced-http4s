@@ -5,7 +5,7 @@ Code samples of advanced features of [Http4s](http://http4s.org/) in combination
 
 ## Streaming end to end
 
-- **Server**: Streaming responses end to end, from the `FileService` reading all the directories in your $HOME directory to the HTTP Endpoint.
+- **Server**: Streaming responses end to end, from the `FileService` reading all the directories in your `$HOME` directory to the `FileHttpEndpoint`.
 - **Client**: Parsing chunks of the response body produced by the server in a streaming fashion way.
 
 ## Compressed responses

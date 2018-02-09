@@ -17,7 +17,7 @@ class HttpServer[F[_]](implicit F: Effect[F]) extends StreamApp[F] {
         ctx      <- Stream.emit(new Module[F])
         exitCode <- BlazeBuilder[F]
                       .bindHttp(sys.env.getOrElse("PORT", "8080").toInt, "0.0.0.0")
-                      .mountService(ctx.fileStreamHttpEndpoint)
+                      .mountService(ctx.fileHttpEndpoint)
                       .serve
       } yield exitCode
     }
