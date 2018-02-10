@@ -1,7 +1,7 @@
 package com.github.gvolpe.http4s.server
 
 import cats.effect.Effect
-import com.github.gvolpe.http4s.server.endpoints.{FileHttpEndpoint, HexNameHttpEndpoint, TimeoutHttpEndpoint}
+import com.github.gvolpe.http4s.server.endpoints.{FileHttpEndpoint, HexNameHttpEndpoint, JsonXmlHttpEndpoint, TimeoutHttpEndpoint}
 import com.github.gvolpe.http4s.server.service.FileService
 import fs2.Scheduler
 import org.http4s.HttpService
@@ -32,9 +32,12 @@ class Module[F[_]](implicit F: Effect[F], S: Scheduler) {
     middleware(hexNameHttpEndpoint)
 
   private val timeoutHttpEndpoint: HttpService[F] =
-    new TimeoutHttpEndpoint[F]().service
+    new TimeoutHttpEndpoint[F].service
 
   val timeoutEndpoints: HttpService[F] =
     Timeout(1.second)(timeoutHttpEndpoint)
+
+  val mediaHttpEndpoint: HttpService[F] =
+    new JsonXmlHttpEndpoint[F].service
 
 }

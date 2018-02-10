@@ -26,6 +26,7 @@ object Dependencies {
     lazy val http4sClient   = "org.http4s"          %% "http4s-blaze-client"          % Versions.Http4s
     lazy val http4sDsl      = "org.http4s"          %% "http4s-dsl"                   % Versions.Http4s
     lazy val http4sCirce    = "org.http4s"          %% "http4s-circe"                 % Versions.Http4s
+    lazy val http4sXml      = "org.http4s"          %% "http4s-scala-xml"             % Versions.Http4s
 
     lazy val tsecJwtMac     = "io.github.jmcardon"  %% "tsec-jwt-mac"                 % Versions.Tsec
 

@@ -27,19 +27,20 @@ Middleware Composition
 
 > The endpoint `/v1/nonstream/dirs?depth=3` demonstrates the use case.
 
-Authentication
+Media Type negotiation
+----------------------
+
+- **XML** and **Json**: Decoding request body with either of these types for the same endpoint.
+
+> The `JsonXmlHttpEndpoint` demonstrates this use case and it's validated in its spec.
+
+TODO: Authentication
 --------------
 
 - **Basic Auth**: Using the given middleware.
 - **OAuth**: Using Twitter and GitHub APIs.
 
-Media Type negotiation
-----------------------
-
-- **XML**
-- **Json**
-
-Form Multipart
+TODO: Form Multipart
 --------------
 
 - **Uploading a file**

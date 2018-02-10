@@ -21,6 +21,7 @@ class HttpServer[F[_]](implicit F: Effect[F]) extends StreamApp[F] {
                       .mountService(ctx.nonStreamFileHttpEndpoint, s"/${endpoints.ApiVersion}/nonstream")
                       .mountService(ctx.compressedEndpoints)
                       .mountService(ctx.timeoutEndpoints)
+                      .mountService(ctx.mediaHttpEndpoint)
                       .serve
       } yield exitCode
     }
