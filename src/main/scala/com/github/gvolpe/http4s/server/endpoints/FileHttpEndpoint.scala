@@ -10,7 +10,7 @@ class FileHttpEndpoint[F[_] : Monad](fileService: FileService[F]) extends Http4s
   object DepthQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Int]("depth")
 
   val service: HttpService[F] = HttpService {
-    case GET -> Root / ApiVersion / "dirs" :? DepthQueryParamMatcher(depth) =>
+    case GET -> Root / "dirs" :? DepthQueryParamMatcher(depth) =>
       Ok(fileService.homeDirectories(depth))
   }
 

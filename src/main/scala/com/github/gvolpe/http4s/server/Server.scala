@@ -17,8 +17,10 @@ class HttpServer[F[_]](implicit F: Effect[F]) extends StreamApp[F] {
         ctx      <- Stream(new Module[F])
         exitCode <- BlazeBuilder[F]
                       .bindHttp(8080, "0.0.0.0")
-                      .mountService(ctx.fileHttpEndpoint)
-                      .mountService(ctx.compressedHttpEndpoints)
+                      .mountService(ctx.fileHttpEndpoint, s"/${endpoints.ApiVersion}")
+                      .mountService(ctx.nonStreamFileHttpEndpoint, s"/${endpoints.ApiVersion}/nonstream")
+                      .mountService(ctx.compressedEndpoints)
+                      .mountService(ctx.timeoutEndpoints)
                       .serve
       } yield exitCode
     }

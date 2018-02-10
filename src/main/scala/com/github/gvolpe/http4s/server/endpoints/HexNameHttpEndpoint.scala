@@ -11,7 +11,6 @@ class HexNameHttpEndpoint[F[_]: Monad] extends Http4sDsl[F] {
   val service: HttpService[F] = HttpService {
     case GET -> Root / ApiVersion / "hex" :? NameQueryParamMatcher(name) =>
       Ok(name.getBytes("UTF-8").map("%02x".format(_)).mkString)
-
   }
 
 }

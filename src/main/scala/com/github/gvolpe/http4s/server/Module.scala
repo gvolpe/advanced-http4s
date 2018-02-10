@@ -1,13 +1,17 @@
 package com.github.gvolpe.http4s.server
 
-import cats.effect.Sync
-import com.github.gvolpe.http4s.server.endpoints.{FileHttpEndpoint, HexNameHttpEndpoint}
+import cats.effect.Effect
+import com.github.gvolpe.http4s.server.endpoints.{FileHttpEndpoint, HexNameHttpEndpoint, TimeoutHttpEndpoint}
 import com.github.gvolpe.http4s.server.service.FileService
+import fs2.Scheduler
 import org.http4s.HttpService
 import org.http4s.server.HttpMiddleware
-import org.http4s.server.middleware.{AutoSlash, GZip}
+import org.http4s.server.middleware.{AutoSlash, ChunkAggregator, GZip, Timeout}
 
-class Module[F[_]](implicit F: Sync[F]) {
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+
+class Module[F[_]](implicit F: Effect[F], S: Scheduler) {
 
   private val fileService = new FileService[F]
 
@@ -19,9 +23,18 @@ class Module[F[_]](implicit F: Sync[F]) {
   val fileHttpEndpoint: HttpService[F] =
     new FileHttpEndpoint[F](fileService).service
 
+  val nonStreamFileHttpEndpoint = ChunkAggregator(fileHttpEndpoint)
+
   private val hexNameHttpEndpoint: HttpService[F] =
     new HexNameHttpEndpoint[F].service
 
-  val compressedHttpEndpoints = middleware(hexNameHttpEndpoint)
+  val compressedEndpoints: HttpService[F] =
+    middleware(hexNameHttpEndpoint)
+
+  private val timeoutHttpEndpoint: HttpService[F] =
+    new TimeoutHttpEndpoint[F]().service
+
+  val timeoutEndpoints: HttpService[F] =
+    Timeout(1.second)(timeoutHttpEndpoint)
 
 }

@@ -17,11 +17,20 @@ Middleware Composition
 - **GZip**: For compressed responses. Client must set the `Accept Encoding` header to `gzip`.
 - **AutoSlash**: To make endpoints work with and without the slash `/` at the end.
 
-> Response compression is verified by `HexNameHttpEndpointSpec`. You can also try it out from Postman or similar.
+> Response compression is verified by `HexNameHttpEndpointSpec`. You can also try it out on Postman or similar.
+
+- **Timeout**: Handling response timeouts with the given middleware.
+
+> The `TimeoutHttpEndpoint` generates a response in a random time to demonstrate the use.
+
+- **NonStreamResponse**: Using the `ChunkAggregator` middleware to wrap the streaming `FileHttpEndpoint` and remove the Chunked Transfer Encoding.
+
+> The endpoint `/v1/nonstream/dirs?depth=3` demonstrates the use case.
 
 Authentication
 --------------
 
+- **Basic Auth**: Using the given middleware.
 - **OAuth**: Using Twitter and GitHub APIs.
 
 Media Type negotiation
