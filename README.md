@@ -7,7 +7,7 @@ Streaming end to end
 --------------------
 
 - **Server**: Streaming responses end to end, from the `FileService` reading all the directories in your `$HOME` directory to the `FileHttpEndpoint`.
-- **Client**: Parsing chunks of the response body produced by the server in a streaming fashion way.
+- **StreamClient**: Parsing chunks of the response body produced by the server in a streaming fashion way.
 
 > You'll need two sbt sessions. Run the server in one and after the client in the other to try it out.
 
@@ -34,14 +34,19 @@ Media Type negotiation
 
 > The `JsonXmlHttpEndpoint` demonstrates this use case and it's validated in its spec.
 
+Multipart Form Data
+-------------------
+
+- **Server**: The `MultipartHttpEndpoint` is responsible for parsing multipart data with the given multipart decoder.
+- **MultipartClient**: Example uploading both text and an image.
+
+> Similar to the streaming example, you'll need to run both Server and MultipartClient to see how it works.
+
+*NOTE: Beware of the creation of `rick.jpg` file in your HOME directory!*
+
 TODO: Authentication
 --------------
 
 - **Basic Auth**: Using the given middleware.
 - **OAuth**: Using Twitter and GitHub APIs.
-
-TODO: Form Multipart
---------------
-
-- **Uploading a file**
 

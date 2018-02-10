@@ -1,7 +1,8 @@
 package com.github.gvolpe.http4s.server
 
 import cats.effect.Effect
-import com.github.gvolpe.http4s.server.endpoints.{FileHttpEndpoint, HexNameHttpEndpoint, JsonXmlHttpEndpoint, TimeoutHttpEndpoint}
+import cats.syntax.semigroupk._ // For <+>
+import com.github.gvolpe.http4s.server.endpoints._
 import com.github.gvolpe.http4s.server.service.FileService
 import fs2.Scheduler
 import org.http4s.HttpService
@@ -39,5 +40,13 @@ class Module[F[_]](implicit F: Effect[F], S: Scheduler) {
 
   val mediaHttpEndpoint: HttpService[F] =
     new JsonXmlHttpEndpoint[F].service
+
+  val multipartHttpEndpoint: HttpService[F] =
+    new MultipartHttpEndpoint[F](fileService).service
+
+  val httpServices: HttpService[F] = (
+    compressedEndpoints <+> timeoutEndpoints
+    <+> mediaHttpEndpoint <+> multipartHttpEndpoint
+  )
 
 }

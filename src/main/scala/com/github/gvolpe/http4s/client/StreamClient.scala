@@ -11,7 +11,7 @@ import monix.execution.Scheduler.Implicits.global
 import org.http4s.client.blaze.Http1Client
 import org.http4s.{Request, Uri}
 
-object Client extends HttpClient[Task]
+object StreamClient extends HttpClient[Task]
 
 class HttpClient[F[_]](implicit F: Effect[F], S: StreamUtils[F]) extends StreamApp {
 
