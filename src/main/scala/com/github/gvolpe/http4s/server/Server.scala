@@ -14,10 +14,11 @@ class HttpServer[F[_]](implicit F: Effect[F]) extends StreamApp[F] {
   override def stream(args: List[String], requestShutdown: F[Unit]): Stream[F, ExitCode] =
     Scheduler(corePoolSize = 2).flatMap { implicit scheduler =>
       for {
-        ctx      <- Stream.emit(new Module[F])
+        ctx      <- Stream(new Module[F])
         exitCode <- BlazeBuilder[F]
-                      .bindHttp(sys.env.getOrElse("PORT", "8080").toInt, "0.0.0.0")
+                      .bindHttp(8080, "0.0.0.0")
                       .mountService(ctx.fileHttpEndpoint)
+                      .mountService(ctx.compressedHttpEndpoints)
                       .serve
       } yield exitCode
     }
