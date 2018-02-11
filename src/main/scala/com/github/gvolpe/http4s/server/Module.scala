@@ -3,6 +3,7 @@ package com.github.gvolpe.http4s.server
 import cats.effect.Effect
 import cats.syntax.semigroupk._ // For <+>
 import com.github.gvolpe.http4s.server.endpoints._
+import com.github.gvolpe.http4s.server.endpoints.auth.BasicAuthHttpEndpoint
 import com.github.gvolpe.http4s.server.service.FileService
 import fs2.Scheduler
 import org.http4s.HttpService
@@ -29,24 +30,28 @@ class Module[F[_]](implicit F: Effect[F], S: Scheduler) {
   private val hexNameHttpEndpoint: HttpService[F] =
     new HexNameHttpEndpoint[F].service
 
-  val compressedEndpoints: HttpService[F] =
+  private val compressedEndpoints: HttpService[F] =
     middleware(hexNameHttpEndpoint)
 
   private val timeoutHttpEndpoint: HttpService[F] =
     new TimeoutHttpEndpoint[F].service
 
-  val timeoutEndpoints: HttpService[F] =
+  private val timeoutEndpoints: HttpService[F] =
     Timeout(1.second)(timeoutHttpEndpoint)
 
-  val mediaHttpEndpoint: HttpService[F] =
+  private val mediaHttpEndpoint: HttpService[F] =
     new JsonXmlHttpEndpoint[F].service
 
-  val multipartHttpEndpoint: HttpService[F] =
+  private val multipartHttpEndpoint: HttpService[F] =
     new MultipartHttpEndpoint[F](fileService).service
+
+  private val basicAuthHttpEndpoint: HttpService[F] =
+    new BasicAuthHttpEndpoint[F].service
 
   val httpServices: HttpService[F] = (
     compressedEndpoints <+> timeoutEndpoints
     <+> mediaHttpEndpoint <+> multipartHttpEndpoint
+    <+> basicAuthHttpEndpoint
   )
 
 }

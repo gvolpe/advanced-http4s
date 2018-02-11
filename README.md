@@ -44,9 +44,9 @@ Multipart Form Data
 
 *NOTE: Beware of the creation of `rick.jpg` file in your HOME directory!*
 
-TODO: Authentication
+Authentication
 --------------
 
-- **Basic Auth**: Using the given middleware.
-- **OAuth**: Using Twitter and GitHub APIs.
+- **Basic Auth**: Using the given middleware as demonstrated by the `BasicAuthHttpEndpoint`.
+- **OAuth**: Using Twitter and GitHub APIs. (TODO)
 
