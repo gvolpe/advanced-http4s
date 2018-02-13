@@ -3,19 +3,22 @@ package com.github.gvolpe.http4s.server
 import cats.effect.Effect
 import cats.syntax.semigroupk._ // For <+>
 import com.github.gvolpe.http4s.server.endpoints._
-import com.github.gvolpe.http4s.server.endpoints.auth.BasicAuthHttpEndpoint
-import com.github.gvolpe.http4s.server.service.FileService
+import com.github.gvolpe.http4s.server.endpoints.auth.{BasicAuthHttpEndpoint, GitHubHttpEndpoint}
+import com.github.gvolpe.http4s.server.service.{FileService, GitHubService}
 import fs2.Scheduler
 import org.http4s.HttpService
+import org.http4s.client.Client
 import org.http4s.server.HttpMiddleware
 import org.http4s.server.middleware.{AutoSlash, ChunkAggregator, GZip, Timeout}
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class Module[F[_]](implicit F: Effect[F], S: Scheduler) {
+class Module[F[_]](client: Client[F])(implicit F: Effect[F], S: Scheduler) {
 
   private val fileService = new FileService[F]
+
+  private val gitHubService = new GitHubService[F](client)
 
   def middleware: HttpMiddleware[F] = {
     {(service: HttpService[F]) => GZip(service)(F)} compose
@@ -45,13 +48,18 @@ class Module[F[_]](implicit F: Effect[F], S: Scheduler) {
   private val multipartHttpEndpoint: HttpService[F] =
     new MultipartHttpEndpoint[F](fileService).service
 
-  private val basicAuthHttpEndpoint: HttpService[F] =
+  private val gitHubHttpEndpoint: HttpService[F] =
+    new GitHubHttpEndpoint[F](gitHubService).service
+
+  val basicAuthHttpEndpoint: HttpService[F] =
     new BasicAuthHttpEndpoint[F].service
 
+  // NOTE: If you mix services wrapped in `AuthMiddleware[F, ?]` the entire namespace will be protected.
+  // You'll get 401 (Unauthorized) instead of 404 (Not found). Mount it separately as done in Server.
   val httpServices: HttpService[F] = (
     compressedEndpoints <+> timeoutEndpoints
     <+> mediaHttpEndpoint <+> multipartHttpEndpoint
-    <+> basicAuthHttpEndpoint
+    <+> gitHubHttpEndpoint
   )
 
 }

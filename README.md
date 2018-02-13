@@ -48,5 +48,5 @@ Authentication
 --------------
 
 - **Basic Auth**: Using the given middleware as demonstrated by the `BasicAuthHttpEndpoint`.
-- **OAuth**: Using Twitter and GitHub APIs. (TODO)
+- **OAuth 2**: Using GitHub as demonstrated by the `GitHubHttpEndpoint`.
 

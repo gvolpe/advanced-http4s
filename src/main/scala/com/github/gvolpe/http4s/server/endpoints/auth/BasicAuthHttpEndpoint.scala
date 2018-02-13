@@ -11,7 +11,7 @@ import org.http4s.server.middleware.authentication.BasicAuth
 class BasicAuthHttpEndpoint[F[_]](implicit F: Sync[F], R: AuthRepository[F, BasicCredentials]) extends Http4sDsl[F] {
 
   private val authedService: AuthedService[BasicCredentials, F] = AuthedService {
-    case GET -> Root / ApiVersion / "protected" as user =>
+    case GET -> Root as user =>
       Ok(s"Access Granted: ${user.username}")
   }
 
