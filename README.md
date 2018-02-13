@@ -50,3 +50,24 @@ Authentication
 - **Basic Auth**: Using the given middleware as demonstrated by the `BasicAuthHttpEndpoint`.
 - **OAuth 2**: Using GitHub as demonstrated by the `GitHubHttpEndpoint`.
 
+-----------------------------------------------------------------------------
+
+fs2 examples
+============
+
+In the fs2 package you'll find some practical examples of the few things it's possible to build with this powerful streaming library. This might serve as a starting point, your creativity will do the rest.
+
+`fs2.async` package
+--------------------
+
+Apart from the use of the three core types `Stream[F, I]`, `Pipe[F, I, O]` and `Sink[F, I]` you'll find examples of use of the following types:
+
+- `Topic[F, A]`
+- `Signal[F, A]`
+- `Queue[F, A]`
+- `Ref[F, A]`
+- `Promise[F, A]`
+- `Semaphore[F]`
+
+In addition to the use of some other functions useful in Parallel and Concurrent scenarios.
+

@@ -5,7 +5,7 @@ object Dependencies {
   object Versions {
     val CatsEffect  = "0.8"
     val Monix       = "3.0.0-M3"
-    val Fs2         = "0.10.0"
+    val Fs2         = "0.10.1"
     val Http4s      = "0.18.0"
     val Tsec        = "0.0.1-M7"
     val Circe       = "0.9.1"
