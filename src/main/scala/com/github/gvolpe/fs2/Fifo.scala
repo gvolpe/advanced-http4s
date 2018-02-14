@@ -24,7 +24,7 @@ class Fifo[F[_]: Effect] extends StreamApp[F] {
         q1 <- Stream.eval(async.boundedQueue[F, Int](1))
         q2 <- Stream.eval(async.boundedQueue[F, Int](100))
         bp = new Buffering[F](q1, q2)
-        ec <- bp.start mergeHaltR S.delay(Stream.emit(ExitCode.Success), 5.seconds)
+        ec <- bp.start.drain mergeHaltR S.delay(Stream.emit(ExitCode.Success), 5.seconds)
       } yield ec
     }
 
@@ -32,13 +32,12 @@ class Fifo[F[_]: Effect] extends StreamApp[F] {
 
 class Buffering[F[_]](q1: Queue[F, Int], q2: Queue[F, Int])(implicit F: Effect[F]) {
 
-  def start: Stream[F, ExitCode] = {
+  def start: Stream[F, Unit] =
     Stream(
       Stream.range(0, 1000).covary[F] to q1.enqueue,
       q1.dequeue to q2.enqueue,
       //.map won't work here as you're trying to map a pure value with a side effect. Use `evalMap` instead.
       q2.dequeue.evalMap(n => F.delay(println(s"Pulling out $n from Queue #2")))
-    ).join(3).drain ++ Stream.emit(ExitCode.Success)
-  }
+    ).join(3)
 
 }
