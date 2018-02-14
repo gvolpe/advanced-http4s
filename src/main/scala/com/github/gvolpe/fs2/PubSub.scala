@@ -38,9 +38,9 @@ class PubSub[F[_]: Effect] extends StreamApp[F] {
 
 }
 
-class EventService[F[_]: Effect](eventsTopic: Topic[F, Event],
-                                 interrupter: Signal[F, Boolean])
-                                (implicit S: Scheduler) {
+class EventService[F[_]](eventsTopic: Topic[F, Event],
+                         interrupter: Signal[F, Boolean])
+                        (implicit F: Effect[F], S: Scheduler) {
 
   // Publishing events every one second until signaling interruption
   def startPublisher: Stream[F, Unit] =
@@ -56,7 +56,7 @@ class EventService[F[_]: Effect](eventsTopic: Topic[F, Event],
     val s3: Stream[F, Event] = S.delay(eventsTopic.subscribe(10), 10.seconds)
 
     def sink(subscriberNumber: Int): Sink[F, Event] =
-      _.map(e => println(s"Subscriber #$subscriberNumber processing event: $e"))
+      _.evalMap(e => F.delay(println(s"Subscriber #$subscriberNumber processing event: $e")))
 
     Stream(s1 to sink(1), s2 to sink(2), s3 to sink(3)).join(3)
   }
