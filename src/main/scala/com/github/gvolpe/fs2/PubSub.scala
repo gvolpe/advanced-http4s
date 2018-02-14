@@ -32,7 +32,7 @@ class PubSub[F[_]: Effect] extends StreamApp[F] {
         exitCode  <- Stream(
                       S.delay(Stream.eval(signal.set(true)), 15.seconds),
                       service.startPublisher mergeHaltL service.startSubscribers
-                    ).join(2).drain ++ Stream.emit(ExitCode.Success).covary[F]
+                    ).join(2).drain ++ Stream.emit(ExitCode.Success)
       } yield exitCode
     }
 
