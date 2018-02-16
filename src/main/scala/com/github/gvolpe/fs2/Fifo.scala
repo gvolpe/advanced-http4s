@@ -24,7 +24,7 @@ class Fifo[F[_]: Effect] extends StreamApp[F] {
         q1 <- Stream.eval(async.boundedQueue[F, Int](1))
         q2 <- Stream.eval(async.boundedQueue[F, Int](100))
         bp = new Buffering[F](q1, q2)
-        ec <- bp.start.drain mergeHaltR S.delay(Stream.emit(ExitCode.Success), 5.seconds)
+        ec <- S.delay(Stream.emit(ExitCode.Success).covary[F], 5.seconds) concurrently bp.start.drain
       } yield ec
     }
 

@@ -31,7 +31,7 @@ class PubSub[F[_]: Effect] extends StreamApp[F] {
         service   = new EventService[F](topic, signal)
         exitCode  <- Stream(
                       S.delay(Stream.eval(signal.set(true)), 15.seconds),
-                      service.startPublisher mergeHaltL service.startSubscribers
+                      service.startPublisher concurrently service.startSubscribers
                     ).join(2).drain ++ Stream.emit(ExitCode.Success)
       } yield exitCode
     }
