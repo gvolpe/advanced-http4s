@@ -7,12 +7,13 @@ import fs2.{Scheduler, Stream, StreamApp, async}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object RacingApp extends Racing[IO]
+object OnceApp extends Once[IO]
 
 /**
   * Demonstrate the use of [[fs2.async.Promise]]
   *
-  * Two processes will try to complete the promise at the same time but only one will succeed.
+  * Two processes will try to complete the promise at the same time but only one will succeed,
+  * completing the promise exactly once.
   * The loser one will raise an error when trying to complete a promise already completed,
   * that's why we call `attempt` on the evaluation.
   *
@@ -25,19 +26,19 @@ object RacingApp extends Racing[IO]
   * 10 seconds and you can know for sure that the process completing the promise is going to
   * be the first one.
   * */
-class Racing[F[_]: Effect] extends StreamApp[F] {
+class Once[F[_]: Effect] extends StreamApp[F] {
 
   override def stream(args: List[String], requestShutdown: F[Unit]): fs2.Stream[F, ExitCode] =
     Scheduler(corePoolSize = 4).flatMap { implicit scheduler =>
       for {
         p <- Stream.eval(async.promise[F, Int])
-        e <- new Race[F](p).start
+        e <- new ConcurrentCompletion[F](p).start
       } yield e
     }
 
 }
 
-class Race[F[_]](p: Promise[F, Int])(implicit F: Effect[F]) {
+class ConcurrentCompletion[F[_]](p: Promise[F, Int])(implicit F: Effect[F]) {
 
   private def attemptPromiseCompletion(n: Int): Stream[F, Unit] =
     Stream.eval(p.complete(n)).attempt.drain
