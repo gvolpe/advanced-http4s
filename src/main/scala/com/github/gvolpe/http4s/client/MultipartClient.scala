@@ -1,6 +1,9 @@
 package com.github.gvolpe.http4s.client
 
+import java.net.URL
+
 import cats.effect.Effect
+import cats.syntax.flatMap._
 import cats.syntax.functor._
 import com.github.gvolpe.http4s.StreamUtils
 import fs2.StreamApp.ExitCode
@@ -18,18 +21,20 @@ object MultipartClient extends MultipartHttpClient[Task]
 
 class MultipartHttpClient[F[_]](implicit F: Effect[F], S: StreamUtils[F]) extends StreamApp with Http4sClientDsl[F] {
 
-  private val rick = getClass.getResource("/rick.jpg")
+  private val image: F[URL] = F.delay(getClass.getResource("/rick.jpg"))
 
-  private val multipart = Multipart[F](
+  private def multipart(url: URL) = Multipart[F](
     Vector(
       Part.formData("name", "gvolpe"),
-      Part.fileData("rick", rick, `Content-Type`(MediaType.`image/png`))
+      Part.fileData("rick", url, `Content-Type`(MediaType.`image/png`))
     )
   )
 
   private val request =
-    POST(Uri.uri("http://localhost:8080/v1/multipart"), multipart)
-      .map(_.replaceAllHeaders(multipart.headers))
+    for {
+      body <- image.map(multipart)
+      req  <- POST(Uri.uri("http://localhost:8080/v1/multipart"), body)
+    } yield req.replaceAllHeaders(body.headers)
 
   override def stream(args: List[String], requestShutdown: F[Unit]): Stream[F, ExitCode] = {
     Scheduler(corePoolSize = 2).flatMap { implicit scheduler =>
