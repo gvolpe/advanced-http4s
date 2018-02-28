@@ -60,12 +60,21 @@ class JsonXmlHttpEndpointSpec extends FunSuite {
       val bodyRequest = request.withBody[String](jsonPerson)
 
       bodyRequest.flatMap { req =>
-        httpService(req).value.map { maybe =>
-          maybe.fold(fail("Empty response")) { response =>
-            assert(response.status == Status.BadRequest)
-          }
+        httpService(req).value.attempt.map {
+          case Left(e)  => assert(e.getMessage == "Malformed message body: Invalid XML")
+          case Right(_) => fail("Got a response when a failure was expected")
         }
       }
+
+      // Using `req.decode` gives you a response, using `req.as` throws an exception
+      // https://gitter.im/http4s/http4s?at=5a964662758c233504cc0fec
+//      bodyRequest.flatMap { req =>
+//        httpService(req).value.map { maybe =>
+//          maybe.fold(fail("Empty response")) { response =>
+//            assert(response.status == Status.BadRequest)
+//          }
+//        }
+//      }
     }
   }
 
