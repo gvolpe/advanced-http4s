@@ -1,30 +1,32 @@
 package com.github.gvolpe.http4s.client
 
-import cats.effect.Effect
+import cats.effect.{ConcurrentEffect, ExitCode, IO}
+import com.github.gvolpe.fs2.PubSubApp.stream
 import com.github.gvolpe.http4s.StreamUtils
-import fs2.StreamApp.ExitCode
-import fs2.{Stream, StreamApp}
+import fs2.Stream
 import io.circe.Json
-import jawn.Facade
-import monix.eval.Task
+import jawn.RawFacade
+import monix.eval.TaskApp
 import monix.execution.Scheduler.Implicits.global
-import org.http4s.client.blaze.Http1Client
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.{Request, Uri}
 
-object StreamClient extends HttpClient[Task]
+object StreamClient extends TaskApp {
 
-class HttpClient[F[_]](implicit F: Effect[F], S: StreamUtils[F]) extends StreamApp {
+  implicit final val jsonFacade: RawFacade[Json] =
+    io.circe.jawn.CirceSupportParser.facade
 
-  implicit val jsonFacade: Facade[Json] = io.circe.jawn.CirceSupportParser.facade
-
-  override def stream(args: List[String], requestShutdown: F[Unit]): Stream[F, ExitCode] = {
-    Http1Client.stream[F]().flatMap { client =>
+  def stream[F[_]: ConcurrentEffect](implicit S: StreamUtils[F]): Stream[F, Unit] =
+    BlazeClientBuilder[F](global).stream.flatMap { client =>
       val request = Request[F](uri = Uri.uri("http://localhost:8080/v1/dirs?depth=3"))
       for {
-        response <- client.streaming(request)(_.body.chunks.through(fs2.text.utf8DecodeC))
-        _        <- S.putStr(response)
+        response <- client.streaming(request)(
+          _.body.chunks.through(fs2.text.utf8DecodeC))
+        _ <- S.putStr(response)
       } yield ()
-    }.drain
-  }
+    }
+
+  override def run(args: List[String]): IO[ExitCode] =
+    stream.compile.drain.as(ExitCode.Success)
 
 }

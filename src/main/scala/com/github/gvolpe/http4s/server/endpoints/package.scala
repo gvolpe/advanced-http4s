@@ -8,7 +8,7 @@ import scala.xml._
 package object endpoints {
   val ApiVersion = "v1"
 
-  case class Person(name: String, age: Int)
+  final case class Person(name: String, age: Int)
 
   /**
     * XML Example for Person:

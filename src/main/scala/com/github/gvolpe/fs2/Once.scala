@@ -1,16 +1,11 @@
 package com.github.gvolpe.fs2
 
-import cats.effect.{Effect, IO}
-import fs2.StreamApp.ExitCode
-import fs2.async.Promise
-import fs2.{Scheduler, Stream, StreamApp, async}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-
-object OnceApp extends Once[IO]
+import cats.effect._
+import cats.effect.concurrent.Deferred
+import fs2.Stream
 
 /**
-  * Demonstrate the use of [[fs2.async.Promise]]
+  * Demonstrate the use of [[cats.effect.concurrent.Deferred]]
   *
   * Two processes will try to complete the promise at the same time but only one will succeed,
   * completing the promise exactly once.
@@ -26,19 +21,19 @@ object OnceApp extends Once[IO]
   * 10 seconds and you can know for sure that the process completing the promise is going to
   * be the first one.
   * */
-class Once[F[_]: Effect] extends StreamApp[F] {
+object OnceApp extends IOApp {
 
-  override def stream(args: List[String], requestShutdown: F[Unit]): fs2.Stream[F, ExitCode] =
-    Scheduler(corePoolSize = 4).flatMap { implicit scheduler =>
-      for {
-        p <- Stream.eval(async.promise[F, Int])
-        e <- new ConcurrentCompletion[F](p).start
-      } yield e
-    }
+  def stream[F[_]: ConcurrentEffect]: fs2.Stream[F, Unit] =
+    for {
+      p <- Stream.eval(Deferred[F, Int])
+      e <- new ConcurrentCompletion[F](p).start
+    } yield e
 
+  override def run(args: List[String]): IO[ExitCode] =
+    stream.compile.drain.as(ExitCode.Success)
 }
 
-class ConcurrentCompletion[F[_]](p: Promise[F, Int])(implicit F: Effect[F]) {
+class ConcurrentCompletion[F[_]](p: Deferred[F, Int])(implicit F: Concurrent[F]) {
 
   private def attemptPromiseCompletion(n: Int): Stream[F, Unit] =
     Stream.eval(p.complete(n)).attempt.drain
@@ -48,6 +43,6 @@ class ConcurrentCompletion[F[_]](p: Promise[F, Int])(implicit F: Effect[F]) {
       attemptPromiseCompletion(1),
       attemptPromiseCompletion(2),
       Stream.eval(p.get).evalMap(n => F.delay(println(s"Result: $n")))
-    ).join(3).drain ++ Stream.emit(ExitCode.Success)
+    ).parJoin(3).drain ++ Stream.emit(ExitCode.Success)
 
 }

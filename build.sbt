@@ -1,10 +1,10 @@
 import Dependencies._
 
-lazy val root = (project in file(".")).
-  settings(
+lazy val root = (project in file("."))
+  .settings(
     inThisBuild(List(
       organization := "com.github.gvolpe",
-      scalaVersion := "2.12.4",
+      scalaVersion := "2.12.8",
       version      := "0.1.0-SNAPSHOT",
       scalacOptions := Seq(
         "-deprecation",
@@ -14,7 +14,7 @@ lazy val root = (project in file(".")).
         "-language:existentials",
         "-language:higherKinds",
         "-Ypartial-unification"
-      )    
+      )
     )),
     name := "Advanced Http4s",
     libraryDependencies ++= Seq(
@@ -33,5 +33,6 @@ lazy val root = (project in file(".")).
       Libraries.scalaTest,
       Libraries.scalaCheck
     ),
-    addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.5" cross CrossVersion.binary)
-  )
+    addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.9" cross CrossVersion.binary),
+    scalacOptions := scalacOptions.value.filter(_ != "-Xfatal-warnings"),
+)
