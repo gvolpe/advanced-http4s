@@ -27,7 +27,7 @@ class Module[F[_]](client: Client[F])(implicit F: Effect[F]) {
   val fileHttpEndpoint: HttpRoutes[F] =
     new FileHttpEndpoint[F](fileService).service
 
-  val nonStreamFileHttpEndpoin: ChunkAggregator.type = ??? // ChunkAggregator(fileHttpEndpoint)
+  val nonStreamFileHttpEndpoint: HttpRoutes[F] = ??? // ChunkAggregator(fileHttpEndpoint) // TODO: TOFIX !
 
   private val hexNameHttpEndpoint: HttpRoutes[F] =
     new HexNameHttpEndpoint[F].service
