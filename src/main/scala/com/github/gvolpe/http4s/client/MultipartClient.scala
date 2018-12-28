@@ -22,7 +22,7 @@ class MultipartHttpClient[F[_]: ContextShift](implicit F: ConcurrentEffect[F], S
   private val image: F[URL] = F.delay(getClass.getResource("/rick.jpg"))
   private def request(body: Multipart[F]): F[Request[F]] =
     F.delay {
-      org.http4s.Request[F](
+      Request[F](
         method = Method.POST,
         uri = Uri.uri("http://localhost:8080/v1/multipart"),
         body = body.parts.traverse(_.body).reduce(_ combine _).flatMap(Stream.apply) // TODO: There's maybe a better solution ?
@@ -42,14 +42,13 @@ class MultipartHttpClient[F[_]: ContextShift](implicit F: ConcurrentEffect[F], S
       req  <- request(body)
     } yield req.withHeaders(body.headers)
 
-  def stream: Stream[F, Unit] = {
-      for {
-        client <- BlazeClientBuilder[F](global).stream
-        req    <- Stream.eval(request)
-        value  <- Stream.eval(client.expect[String](req))
-        _      <- S.evalF(println(value))
-      } yield ()
-    }
+  def stream: Stream[F, Unit] =
+    for {
+      client <- BlazeClientBuilder[F](global).stream
+      req    <- Stream.eval(request)
+      value  <- Stream.eval(client.expect[String](req))
+      _      <- S.evalF(println(value))
+    } yield ()
 
   def run(args: List[String]): F[ExitCode] = stream.compile.drain.as(ExitCode.Success)
 
