@@ -22,7 +22,7 @@ object Server extends IOApp {
       s"/${endpoints.ApiVersion}/protected" -> ctx.basicAuthHttpEndpoint
     ).orNotFound
 
-  def stream[F[_]: ConcurrentEffect: Timer]: Stream[F, Unit] =
+  def stream[F[_]: ConcurrentEffect: Timer: ContextShift]: Stream[F, Unit] =
     for {
       client <- BlazeClientBuilder[F](Scheduler.global).stream
       ctx <- Stream(new Module[F](client))
