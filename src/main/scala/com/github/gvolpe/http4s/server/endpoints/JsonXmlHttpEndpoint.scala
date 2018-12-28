@@ -2,6 +2,7 @@ package com.github.gvolpe.http4s.server.endpoints
 
 import cats.effect.Effect
 import cats.syntax.flatMap._
+import com.github.gvolpe.http4s.server.Person
 import io.circe.generic.auto._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
