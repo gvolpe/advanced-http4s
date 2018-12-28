@@ -6,9 +6,9 @@ import java.nio.file.Paths
 import cats.effect.{ContextShift, Effect}
 import com.github.gvolpe.http4s.StreamUtils
 import fs2.Stream
+import monix.execution.Scheduler
 import org.http4s.multipart.Part
-
-import scala.concurrent.ExecutionContext
+import org.slf4j.Logger
 
 class FileService[F[_]](implicit F: Effect[F], S: StreamUtils[F]) {
 
@@ -36,12 +36,13 @@ class FileService[F[_]](implicit F: Effect[F], S: StreamUtils[F]) {
     }
   }
 
-  def store(part: Part[F])(implicit cs: ContextShift[F]): Stream[F, Unit] =
+  def store(part: Part[F], logger: Logger)(implicit cs: ContextShift[F]): Stream[F, Unit] =
     for {
       home      <- S.evalF(sys.env.getOrElse("HOME", "/tmp"))
       filename  <- S.evalF(part.filename.getOrElse("sample"))
       path      <- S.evalF(Paths.get(s"$home/$filename"))
-      _         <- part.body to fs2.io.file.writeAll(path, ExecutionContext.global) // TODO: BUG ?
+      _         <- part.body to fs2.io.file.writeAll(path, Scheduler.io()) // TODO: BUG ?
+      _         <- S.evalF(logger.debug("CONTINUE ?????????????????????"))
     } yield ()
 
 }
