@@ -1,7 +1,6 @@
 package com.github.gvolpe.http4s.server.endpoints.auth
 
 import cats.effect.Sync
-import com.github.gvolpe.http4s.server.endpoints.ApiVersion
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
