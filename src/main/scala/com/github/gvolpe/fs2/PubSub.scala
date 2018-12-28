@@ -30,7 +30,7 @@ object PubSubApp extends IOApp {
       service = new EventService[F](topic, signal)
       emitStopSignal = Stream.sleep[F](15.seconds) *> Stream.eval(signal.set(true))
       starts = service.startPublisher concurrently service.startSubscribers
-      _ <- Stream(emitStopSignal, starts).parJoin[F, Unit](2)
+      _ <- Stream(emitStopSignal, starts).parJoin(2)
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =
