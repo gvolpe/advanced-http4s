@@ -18,17 +18,14 @@ class Module[F[_]: ContextShift: Timer](client: Client[F])(
 
   private val gitHubService = new GitHubService[F](client)
 
-  def middleware: HttpMiddleware[F] = { service: HttpRoutes[F] =>
-    GZip(service)
-  } compose { service =>
-    AutoSlash(service)
-  }
+  def middleware: HttpMiddleware[F] =
+    { service: HttpRoutes[F] => GZip(service) } compose { service => AutoSlash(service) }
 
   val fileHttpEndpoint: HttpRoutes[F] =
     new FileHttpEndpoint[F](fileService).service
 
-  val nonStreamFileHttpEndpoint
-    : HttpRoutes[F] = ??? // ChunkAggregator(fileHttpEndpoint) // TODO: TOFIX !
+  // TODO: TOFIX !
+  val nonStreamFileHttpEndpoint: HttpRoutes[F] = ??? // ChunkAggregator(fileHttpEndpoint)
 
   private val hexNameHttpEndpoint: HttpRoutes[F] =
     new HexNameHttpEndpoint[F].service
@@ -56,12 +53,14 @@ class Module[F[_]: ContextShift: Timer](client: Client[F])(
 
   // NOTE: If you mix services wrapped in `AuthMiddleware[F, ?]` the entire namespace will be protected.
   // You'll get 401 (Unauthorized) instead of 404 (Not found). Mount it separately as done in Server.
-  val httpServices: HttpRoutes[F] = { // For <+>
-    compressedEndpoints
-      .compose(timeoutEndpoints)
-      .compose(mediaHttpEndpoint)
-      .compose(multipartHttpEndpoint)
-      .compose(gitHubHttpEndpoint)
+  val httpServices: HttpRoutes[F] = {
+    import cats.syntax.semigroupk._
+
+    compressedEndpoints <+>
+      timeoutEndpoints <+>
+      mediaHttpEndpoint <+>
+      multipartHttpEndpoint <+>
+      gitHubHttpEndpoint
   }
 
 }
