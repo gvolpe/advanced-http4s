@@ -24,18 +24,18 @@ object MultipartClient extends IOApp with MultipartHttpClient[IO] {
                       S: StreamUtils[IO],
                       CS: ContextShift[IO]) = (F, S, CS)
 
-  override implicit val F: ConcurrentEffect[IO] = sumoner._1
-  override implicit val S: StreamUtils[IO] = sumoner._2
-  override implicit val CS: ContextShift[IO] = sumoner._3
+  override implicit def F: ConcurrentEffect[IO] = sumoner._1
+  override implicit def S: StreamUtils[IO] = sumoner._2
+  override implicit def CS: ContextShift[IO] = sumoner._3
 }
 
 trait MultipartHttpClient[F[_]] extends Http4sClientDsl[F] {
 
   import cats.implicits._
 
-  implicit val F: ConcurrentEffect[F]
-  implicit val S: StreamUtils[F]
-  implicit val CS: ContextShift[F]
+  implicit def F: ConcurrentEffect[F]
+  implicit def S: StreamUtils[F]
+  implicit def CS: ContextShift[F]
 
   private def image: F[URL] = F.delay(getClass.getResource("/rick.jpg"))
   private def request(body: Multipart[F]): F[Request[F]] =
