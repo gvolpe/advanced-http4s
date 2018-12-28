@@ -13,8 +13,6 @@ final class MultipartHttpEndpoint[F[_]: ContextShift](fileService: FileService[F
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  logger.debug("HUUUUUGEEEE MESSSSSSSSSAGGGGEEEE")
-
   final val service: HttpRoutes[F] =
     HttpRoutes
       .of[F] {
@@ -28,19 +26,11 @@ final class MultipartHttpEndpoint[F[_]: ContextShift](fileService: FileService[F
             val stream =
               response
                 .parts
-                .map { v => logger.debug("HUUUUUUUUUUUUUGE 00"); v }
                 .filter(filterFileTypes)
                 .map { v => logger.debug(s"HUUUUUUUUUUUUUGE 11: $v"); v }
                 .traverse { v =>
-                  try  {
-                    fileService.store(v).attempt.map { v => logger.error(s"HUUUUUUUUUUUUUGE 22: $v"); v }
-                  } catch {
-                    case e: Throwable =>
-                      logger.error(s"ERRROOOOOOOOOOOR: $e")
-                      fs2.Stream.eval(Left(e)).asInstanceOf[fs2.Stream[F, Either[Throwable, Unit]]]
-                  }
+                  fileService.store(v, logger).attempt.map { v => logger.error(s"HUUUUUUUUUUUUUGE 22: $v"); v }
                 }
-
 
             Ok(stream.map { _ => logger.error("HUUUUUUUUUUUUUGE 33") }.map(_ => s"Multipart file parsed successfully > ${response.parts}"))
           }
