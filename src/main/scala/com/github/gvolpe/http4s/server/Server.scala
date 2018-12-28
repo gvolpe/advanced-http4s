@@ -10,6 +10,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.{Request, Response}
 
 object Server extends IOApp {
+  import org.http4s.implicits._
   import cats.implicits._
 
   private def app[F[_]: Sync](
