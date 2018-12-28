@@ -1,5 +1,6 @@
 package com.github.gvolpe.http4s.server
 
+import cats.data.OptionT
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import com.github.gvolpe.http4s.server.endpoints._
 import com.github.gvolpe.http4s.server.endpoints.auth.{BasicAuthHttpEndpoint, GitHubHttpEndpoint}
@@ -7,7 +8,7 @@ import com.github.gvolpe.http4s.server.service.{FileService, GitHubService}
 import org.http4s.HttpRoutes
 import org.http4s.client.Client
 import org.http4s.server.HttpMiddleware
-import org.http4s.server.middleware.{AutoSlash, GZip, Timeout}
+import org.http4s.server.middleware.{AutoSlash, ChunkAggregator, GZip, Timeout}
 
 import scala.concurrent.duration._
 
@@ -24,8 +25,7 @@ class Module[F[_]: ContextShift: Timer](client: Client[F])(
   val fileHttpEndpoint: HttpRoutes[F] =
     new FileHttpEndpoint[F](fileService).service
 
-  // TODO: TOFIX !
-  val nonStreamFileHttpEndpoint: HttpRoutes[F] = ??? // ChunkAggregator(fileHttpEndpoint)
+  val nonStreamFileHttpEndpoint: HttpRoutes[F] = ChunkAggregator(OptionT.liftK[F])(fileHttpEndpoint)
 
   private val hexNameHttpEndpoint: HttpRoutes[F] =
     new HexNameHttpEndpoint[F].service
@@ -54,7 +54,7 @@ class Module[F[_]: ContextShift: Timer](client: Client[F])(
   // NOTE: If you mix services wrapped in `AuthMiddleware[F, ?]` the entire namespace will be protected.
   // You'll get 401 (Unauthorized) instead of 404 (Not found). Mount it separately as done in Server.
   val httpServices: HttpRoutes[F] = {
-    import cats.syntax.semigroupk._
+    import cats.syntax.semigroupk._ // ⚠️ IntelliJ doesn't understand the need for this import
 
     compressedEndpoints <+>
       timeoutEndpoints <+>
