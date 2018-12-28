@@ -39,11 +39,11 @@ class ConcurrentCompletion[F[_]](p: Deferred[F, Int])(implicit F: Concurrent[F])
   private def attemptPromiseCompletion(n: Int): Stream[F, Unit] =
     Stream.eval(p.complete(n)).attempt.drain
 
-  def start: Stream[F, ExitCode] =
+  def start: Stream[F, Unit] =
     Stream(
       attemptPromiseCompletion(1),
       attemptPromiseCompletion(2),
       Stream.eval(p.get).evalMap(n => F.delay(println(s"Result: $n")))
-    ).parJoin(3).drain ++ Stream.emit(ExitCode.Success)
+    ).parJoin(3)
 
 }
