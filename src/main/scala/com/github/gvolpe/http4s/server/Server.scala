@@ -24,9 +24,9 @@ object Server extends IOApp {
 
   def stream[F[_]: ConcurrentEffect: Timer: ContextShift]: Stream[F, ExitCode] =
     for {
-      client <- BlazeClientBuilder[F](Scheduler.global).stream
-      ctx <- Stream(new Module[F](client))
-      exitCode <- BlazeServerBuilder[F]
+      client    <- BlazeClientBuilder[F](Scheduler.global).stream
+      ctx       <- Stream(new Module[F](client))
+      exitCode  <- BlazeServerBuilder[F]
         .bindHttp(8080, "0.0.0.0")
         .withHttpApp(app(ctx))
         .serve
