@@ -5,7 +5,7 @@ import java.net.URL
 import cats.effect._
 import com.github.gvolpe.http4s.StreamUtils
 import fs2.Stream
-import monix.execution.Scheduler.Implicits.global
+import monix.execution.Scheduler
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.headers.`Content-Type`
@@ -53,7 +53,7 @@ trait MultipartHttpClient[F[_]] extends Http4sClientDsl[F] {
   private def multipart(url: URL) = Multipart[F](
     Vector(
       Part.formData("name", "gvolpe"),
-      Part.fileData("rick", url, global, `Content-Type`(MediaType.image.png))
+      Part.fileData("rick", url, Scheduler.global, `Content-Type`(MediaType.image.png))
     )
   )
 
@@ -65,7 +65,7 @@ trait MultipartHttpClient[F[_]] extends Http4sClientDsl[F] {
 
   def stream: Stream[F, Unit] =
     for {
-      client <- BlazeClientBuilder[F](global).stream
+      client <- BlazeClientBuilder[F](Scheduler.global).stream
       req <- Stream.eval(request)
       value <- Stream.eval(client.expect[String](req))
       _ <- S.evalF(println(value))
