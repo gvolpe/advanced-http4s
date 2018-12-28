@@ -20,13 +20,13 @@ object MultipartClient extends IOApp with MultipartHttpClient[IO] {
 
   // @guizmaii remark: I'm not proud of the following code but I didn't find a better solution.
   // TODO: Is there a better solution ?
-  def sumoner(implicit ev: ConcurrentEffect[IO]): ConcurrentEffect[IO] = ev
-  def summoner(implicit ev: StreamUtils[IO]): StreamUtils[IO] = ev
-  def summMoner(implicit ev: ContextShift[IO]): ContextShift[IO] = ev
+  private def sumoner(implicit F: ConcurrentEffect[IO],
+                      S: StreamUtils[IO],
+                      CS: ContextShift[IO]) = (F, S, CS)
 
-  override implicit val F: ConcurrentEffect[IO] = sumoner
-  override implicit val S: StreamUtils[IO] = summoner
-  override implicit val CS: ContextShift[IO] = summMoner
+  override implicit val F: ConcurrentEffect[IO] = sumoner._1
+  override implicit val S: StreamUtils[IO] = sumoner._2
+  override implicit val CS: ContextShift[IO] = sumoner._3
 }
 
 trait MultipartHttpClient[F[_]] extends Http4sClientDsl[F] {
@@ -53,7 +53,10 @@ trait MultipartHttpClient[F[_]] extends Http4sClientDsl[F] {
   private def multipart(url: URL) = Multipart[F](
     Vector(
       Part.formData("name", "gvolpe"),
-      Part.fileData("rick", url, Scheduler.global, `Content-Type`(MediaType.image.png))
+      Part.fileData("rick",
+                    url,
+                    Scheduler.global,
+                    `Content-Type`(MediaType.image.png))
     )
   )
 
