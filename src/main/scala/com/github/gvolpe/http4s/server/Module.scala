@@ -1,11 +1,10 @@
 package com.github.gvolpe.http4s.server
 
-import cats.data.{Kleisli, OptionT}
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import com.github.gvolpe.http4s.server.endpoints._
 import com.github.gvolpe.http4s.server.endpoints.auth.{BasicAuthHttpEndpoint, GitHubHttpEndpoint}
 import com.github.gvolpe.http4s.server.service.{FileService, GitHubService}
-import org.http4s.{HttpRoutes, Request, Response}
+import org.http4s.HttpRoutes
 import org.http4s.client.Client
 import org.http4s.server.HttpMiddleware
 import org.http4s.server.middleware.{AutoSlash, GZip, Timeout}
