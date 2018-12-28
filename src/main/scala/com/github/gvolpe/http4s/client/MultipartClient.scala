@@ -45,8 +45,8 @@ trait MultipartHttpClient[F[_]] extends Http4sClientDsl[F] {
         uri = Uri.uri("http://localhost:8080/v1/multipart"),
         body = body.parts
           .traverse(_.body)
-          .reduce(_ combine _)
-          .flatMap(Stream.apply) // TODO: There's maybe a better solution ?
+          .flatMap(vector => Stream.fromIterator(vector.toIterator))
+          .reduce(_ |+| _)
       )
     }
 
