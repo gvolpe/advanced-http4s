@@ -17,16 +17,17 @@ import scala.concurrent.duration._
   * - Subscriber #2 should receive 10 events
   * - Subscriber #3 should receive 5 events
   * */
+final case class Event(value: String) extends AnyVal
+
 object PubSubApp extends IOApp {
   import cats.syntax.all._
 
-  def stream[F[_]: ConcurrentEffect: Timer]: fs2.Stream[F, Unit] =
+  def stream[F[_]: ConcurrentEffect: Timer](implicit F: ConcurrentEffect[F], T: Timer[F]): fs2.Stream[F, Unit] =
       for {
         topic     <- Stream.eval(Topic[F, Event](Event("")))
         signal    <- Stream.eval(SignallingRef[F, Boolean](false))
         service   = new EventService[F](topic, signal)
-        _  <- Stream(
-                      Sync[F].delay(Stream.eval(signal.set(true)), 15.seconds),
+        _  <- Stream(T.sleep(15.seconds) *> F.delay(Stream.eval(signal.set(true))),
                       service.startPublisher concurrently service.startSubscribers
                     ).parJoin(2)
       } yield ()
@@ -40,7 +41,7 @@ class EventService[F[_]: Timer](eventsTopic: Topic[F, Event], interrupter: Signa
 
   // Publishing events every one second until signaling interruption
   def startPublisher: Stream[F, Unit] =
-    Stream.awakeEvery(1.second).flatMap { _ =>
+    Stream.awakeEvery[F](1.second).flatMap { _ =>
       val event = Event(System.currentTimeMillis().toString)
       Stream.eval(eventsTopic.publish1(event))
     }.interruptWhen(interrupter)
