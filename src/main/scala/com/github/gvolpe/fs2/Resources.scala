@@ -63,7 +63,7 @@ class PreciousResource[F[_]: Effect: Timer](name: String, s: Semaphore[F]) {
       _ <- Stream.eval(s.available.map(a => println(s"$name >> Availability: $a")))
       _ <- Stream.eval(s.acquire)
       _ <- Stream.eval(s.available.map(a => println(s"$name >> Started | Availability: $a")))
-      _ <- Timer[F].sleep(3.seconds)
+      _ <- Stream.sleep(3.seconds)
       _ <- Stream.eval(s.release)
       _ <- Stream.eval(s.available.map(a => println(s"$name >> Done | Availability: $a")))
     } yield ()
