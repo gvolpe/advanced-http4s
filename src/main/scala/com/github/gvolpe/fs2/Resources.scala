@@ -1,18 +1,14 @@
 package com.github.gvolpe.fs2
 
-import cats.effect.{Effect, IO}
+import cats.effect._
+import cats.effect.concurrent.Semaphore
 import cats.syntax.functor._
-import fs2.StreamApp.ExitCode
-import fs2.async.mutable.Semaphore
-import fs2.{Scheduler, Stream, StreamApp, async}
+import fs2.Stream
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-object ResourcesApp extends Resources[IO]
-
 /**
-  * It demonstrates one of the possible uses of [[fs2.async.mutable.Semaphore]]
+  * It demonstrates one of the possible uses of [[cats.effect.concurrent.Semaphore]]
   *
   * Three processes are trying to access a shared resource at the same time but only one at
   * a time will be granted access and the next process have to wait until the resource gets
@@ -44,31 +40,31 @@ object ResourcesApp extends Resources[IO]
   *
   * Finally, R3 was done showing an availability of one once again.
   * */
-class Resources[F[_]: Effect] extends StreamApp[F] {
+object ResourcesApp extends IOApp {
 
-  override def stream(args: List[String], requestShutdown: F[Unit]): fs2.Stream[F, ExitCode] =
-    Scheduler(corePoolSize = 4).flatMap { implicit scheduler =>
+  def stream[F[_]: ConcurrentEffect: Timer]: fs2.Stream[F, Unit] =
       for {
-        s   <- Stream.eval(async.semaphore[F](1))
+        s   <- Stream.eval(Semaphore[F](1))
         r1  = new PreciousResource[F]("R1", s)
         r2  = new PreciousResource[F]("R2", s)
         r3  = new PreciousResource[F]("R3", s)
-        ec  <- Stream(r1.use, r2.use, r3.use).join(3).drain ++ Stream.emit(ExitCode.Success)
-      } yield ec
-    }
+        _  <- Stream(r1.use, r2.use, r3.use).parJoin(3)
+      } yield ()
+
+  override def run(args: List[String]): IO[ExitCode] =
+    stream[IO].compile.drain.as(ExitCode.Success)
 
 }
 
-class PreciousResource[F[_]: Effect](name: String, s: Semaphore[F])
-                                    (implicit S: Scheduler) {
+class PreciousResource[F[_]: Effect: Timer](name: String, s: Semaphore[F]) {
 
   def use: Stream[F, Unit] =
     for {
       _ <- Stream.eval(s.available.map(a => println(s"$name >> Availability: $a")))
-      _ <- Stream.eval(s.decrement)
+      _ <- Stream.eval(s.acquire)
       _ <- Stream.eval(s.available.map(a => println(s"$name >> Started | Availability: $a")))
-      _ <- S.sleep(3.seconds)
-      _ <- Stream.eval(s.increment)
+      _ <- Timer[F].sleep(3.seconds)
+      _ <- Stream.eval(s.release)
       _ <- Stream.eval(s.available.map(a => println(s"$name >> Done | Availability: $a")))
     } yield ()
 
