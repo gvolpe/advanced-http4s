@@ -1,7 +1,6 @@
 package com.github.gvolpe.fs2
 
 import cats.effect._
-import com.github.gvolpe.fs2.CounterApp.stream
 import fs2.Stream
 import fs2.concurrent.Queue
 
@@ -12,6 +11,7 @@ import fs2.concurrent.Queue
   * pulling elements out of the q2.
   * */
 object FifoApp extends IOApp {
+  import cats.syntax.all._
 
   def stream[F[_]: ConcurrentEffect]: fs2.Stream[F, Unit] =
     for {
@@ -21,7 +21,7 @@ object FifoApp extends IOApp {
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =
-    stream.compile.drain.as(ExitCode.Success)
+    stream[IO].compile.drain.as(ExitCode.Success)
 
 }
 

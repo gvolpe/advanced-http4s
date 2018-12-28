@@ -18,6 +18,7 @@ import fs2.{Sink, Stream}
   * #3 >> 3
   * */
 object CounterApp extends IOApp {
+  import cats.syntax.all._
 
   def stream[F[_]: ConcurrentEffect]: Stream[F, Unit] =
     for {
@@ -29,7 +30,7 @@ object CounterApp extends IOApp {
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =
-    stream.compile.drain.as(ExitCode.Success)
+    stream[IO].compile.drain.as(ExitCode.Success)
 }
 
 class Worker[F[_]](number: Int, ref: Ref[F, Int])(implicit F: Effect[F]) {

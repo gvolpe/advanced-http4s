@@ -18,6 +18,7 @@ import scala.concurrent.duration._
   * - Subscriber #3 should receive 5 events
   * */
 object PubSubApp extends IOApp {
+  import cats.syntax.all._
 
   def stream[F[_]: ConcurrentEffect: Timer]: fs2.Stream[F, Unit] =
       for {
@@ -31,7 +32,7 @@ object PubSubApp extends IOApp {
       } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =
-    stream.compile.drain.as(ExitCode.Success)
+    stream[IO].compile.drain.as(ExitCode.Success)
 
 }
 

@@ -22,6 +22,7 @@ import fs2.Stream
   * be the first one.
   * */
 object OnceApp extends IOApp {
+  import cats.syntax.all._
 
   def stream[F[_]: ConcurrentEffect]: fs2.Stream[F, Unit] =
     for {
@@ -30,7 +31,7 @@ object OnceApp extends IOApp {
     } yield e
 
   override def run(args: List[String]): IO[ExitCode] =
-    stream.compile.drain.as(ExitCode.Success)
+    stream[IO].compile.drain.as(ExitCode.Success)
 }
 
 class ConcurrentCompletion[F[_]](p: Deferred[F, Int])(implicit F: Concurrent[F]) {
