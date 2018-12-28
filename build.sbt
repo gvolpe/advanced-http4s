@@ -34,6 +34,6 @@ lazy val root = (project in file("."))
       Libraries.scalaCheck
     ),
     addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.9" cross CrossVersion.binary),
-    // Decomment if it's too boring!
+    // Decomment if it's too annoying!
     //scalacOptions := scalacOptions.value.filter(_ != "-Xfatal-warnings"),
 )
