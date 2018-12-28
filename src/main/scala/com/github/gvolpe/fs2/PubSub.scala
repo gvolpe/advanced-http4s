@@ -28,7 +28,7 @@ object PubSubApp extends IOApp {
       topic <- Stream.eval(Topic[F, Event](Event("")))
       signal <- Stream.eval(SignallingRef[F, Boolean](false))
       service = new EventService[F](topic, signal)
-      emitStopSignal = Stream.sleep(15.seconds) *> Stream.eval(signal.set(true))
+      emitStopSignal = Stream.sleep[F](15.seconds) *> Stream.eval(signal.set(true))
       starts = service.startPublisher concurrently service.startSubscribers
       _ <- Stream(emitStopSignal, starts).parJoin[F, Unit](2)
     } yield ()
