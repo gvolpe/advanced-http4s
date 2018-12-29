@@ -37,13 +37,10 @@ class FileService[F[_]](implicit F: Effect[F], S: StreamUtils[F]) {
     }
   }
 
-  def store(part: Part[F], logger: Logger)(implicit cs: ContextShift[F]): Stream[F, Unit] =
-    for {
-      home      <- S.evalF(sys.env.getOrElse("HOME", "/tmp"))
-      filename  <- S.evalF(part.filename.getOrElse("sample"))
-      path      <- S.evalF(Paths.get(s"$home/$filename"))
-      _         <- part.body to fs2.io.file.writeAll(path, ExecutionContext.global) // TODO: BUG ?
-      _         <- S.evalF(logger.debug("CONTINUE ?????????????????????"))
-    } yield ()
+  def store(part: Part[F], logger: Logger)(implicit cs: ContextShift[F]): Stream[F, Part[F]] =
+    part.body
+      .to(fs2.io.file.writeAll(Paths.get("/tmp/sample"), ExecutionContext.global)) // TODO: BUG ?
+      .flatMap(_ => fs2.Stream(part))
+      .evalTap((p: Part[F]) => F.delay(logger.debug(s"CONTINUE ?????????????????????: $p")))
 
 }
