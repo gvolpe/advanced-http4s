@@ -1,4 +1,4 @@
-package com.github.gvolpe.fs2
+package com.github.gvolpe.cats_effects
 
 import cats.effect._
 import cats.effect.concurrent.Deferred
@@ -24,17 +24,21 @@ import fs2.Stream
 object OnceApp extends IOApp {
   import cats.syntax.all._
 
-  def stream[F[_]: ConcurrentEffect]: fs2.Stream[F, Unit] =
+  def stream[F[_]: ConcurrentEffect: ConsoleOut]: fs2.Stream[F, Unit] =
     for {
       p <- Stream.eval(Deferred[F, Int])
       e <- new ConcurrentCompletion[F](p).start
     } yield e
 
-  override def run(args: List[String]): IO[ExitCode] =
+  override def run(args: List[String]): IO[ExitCode] = {
+    // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
+    implicit val console: Console[IO] = cats.effect.Console.io
+
     stream[IO].compile.drain.as(ExitCode.Success)
+  }
 }
 
-class ConcurrentCompletion[F[_]](p: Deferred[F, Int])(implicit F: Concurrent[F]) {
+class ConcurrentCompletion[F[_]](p: Deferred[F, Int])(implicit F: Concurrent[F], C: ConsoleOut[F]) {
 
   private def attemptPromiseCompletion(n: Int): Stream[F, Unit] =
     Stream.eval(p.complete(n)).attempt.drain
@@ -43,7 +47,7 @@ class ConcurrentCompletion[F[_]](p: Deferred[F, Int])(implicit F: Concurrent[F])
     Stream(
       attemptPromiseCompletion(1),
       attemptPromiseCompletion(2),
-      Stream.eval(p.get).evalMap(n => F.delay(println(s"Result: $n")))
+      Stream.eval(p.get).evalMap(n => C.putStrLn(s"Result: $n"))
     ).parJoin(3)
 
 }
