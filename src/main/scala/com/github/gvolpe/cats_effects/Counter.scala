@@ -4,6 +4,7 @@ import cats.Monad
 import cats.effect._
 import cats.effect.IO
 import cats.effect.concurrent.Ref
+import cats.implicits._
 
 /**
   * Concurrent counter that demonstrates the use of [[cats.effect.concurrent.Ref]].
@@ -19,8 +20,6 @@ import cats.effect.concurrent.Ref
   * #3 >> 3
   * */
 object CounterApp extends IOApp {
-  import cats.syntax.flatMap._
-  import cats.syntax.functor._
 
   def example[F[_]: ConsoleOut](implicit F: Concurrent[F]): F[Unit] =
     for {
@@ -45,8 +44,6 @@ object CounterApp extends IOApp {
 }
 
 object Worker {
-  import cats.syntax.flatMap._
-  import cats.syntax.apply._
 
   private def printRefContent[F[_]: Monad: ConsoleOut](number: Int, ref: Ref[F, Int]): F[Unit] =
     ref.get.flatMap(n => ConsoleOut[F].putStrLn(s"#$number >> $n"))
