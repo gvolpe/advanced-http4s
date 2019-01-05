@@ -24,7 +24,7 @@ import fs2.Stream
 object OnceApp extends IOApp {
   import cats.syntax.all._
 
-  def stream[F[_]: ConcurrentEffect: ConsoleOut]: fs2.Stream[F, Unit] =
+  def stream[F[_]: Concurrent: ConsoleOut]: fs2.Stream[F, Unit] =
     for {
       p <- Stream.eval(Deferred[F, Int])
       e <- new ConcurrentCompletion[F](p).start
