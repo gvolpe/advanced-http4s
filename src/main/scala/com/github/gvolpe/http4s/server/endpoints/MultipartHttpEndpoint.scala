@@ -7,8 +7,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.multipart.{Multipart, Part}
 import org.slf4j.LoggerFactory
 
-final class MultipartHttpEndpoint[F[_]: ContextShift](fileService: FileService[F])
-                                                     (implicit F: Sync[F]) extends Http4sDsl[F] {
+final class MultipartHttpEndpoint[F[_]: Sync: ContextShift](fileService: FileService[F]) extends Http4sDsl[F] {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -25,9 +24,9 @@ final class MultipartHttpEndpoint[F[_]: ContextShift](fileService: FileService[F
             Ok(
               fs2.Stream
                 .emits(response.parts.filter(filterFileTypes))
-                .evalTap((p: Part[F]) => F.delay(logger.debug(s"HUUUUUUUUUUUUUGE 11: $p")))
+                .evalTap((p: Part[F]) => Sync[F].delay(logger.debug(s"HUUUUUUUUUUUUUGE 11: $p")))
                 .flatMap((p: Part[F]) => fileService.store(p, logger))
-                .evalTap((p: Part[F]) => F.delay(logger.error(s"HUUUUUUUUUUUUUGE 22: $p")))
+                .evalTap((p: Part[F]) => Sync[F].delay(logger.error(s"HUUUUUUUUUUUUUGE 22: $p")))
                 .map((p: Part[F]) => s"Multipart file parsed successfully > $p")
             )
           }
