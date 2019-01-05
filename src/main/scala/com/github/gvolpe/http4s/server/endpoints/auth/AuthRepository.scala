@@ -1,6 +1,7 @@
 package com.github.gvolpe.http4s.server.endpoints.auth
 
 import cats.effect.Sync
+import cats.implicits._
 import org.http4s.BasicCredentials
 
 trait AuthRepository[F[_], A] {
@@ -9,7 +10,6 @@ trait AuthRepository[F[_], A] {
 }
 
 object AuthRepository {
-  import cats.implicits._
 
   implicit def authUserRepo[F[_]](implicit F: Sync[F]): AuthRepository[F, BasicCredentials] =
     new AuthRepository[F, BasicCredentials] {
