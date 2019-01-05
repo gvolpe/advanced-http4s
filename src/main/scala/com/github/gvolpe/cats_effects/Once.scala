@@ -3,6 +3,7 @@ package com.github.gvolpe.cats_effects
 import cats.effect._
 import cats.effect.concurrent.Deferred
 import fs2.Stream
+import cats.implicits._
 
 /**
   * Demonstrate the use of [[cats.effect.concurrent.Deferred]]
@@ -22,7 +23,6 @@ import fs2.Stream
   * be the first one.
   * */
 object OnceApp extends IOApp {
-  import cats.syntax.all._
 
   def stream[F[_]: Concurrent: ConsoleOut]: fs2.Stream[F, Unit] =
     for {
