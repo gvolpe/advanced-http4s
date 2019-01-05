@@ -1,6 +1,7 @@
 package com.github.gvolpe.http4s.server.endpoints
 
 import cats.effect.IO
+import cats.implicits._
 import com.github.gvolpe.http4s.IOAssertion
 import org.http4s.server.middleware.GZip
 import org.http4s.{Header, HttpRoutes, Query, Request, Uri}
@@ -20,8 +21,6 @@ class HexNameHttpEndpointSpec extends FunSuite {
       query = Query("name" -> Some("Scala is a really cool programming language!"))
     )
   )
-
-  import cats.implicits._
 
   test("Compressed Response") {
     IOAssertion {
