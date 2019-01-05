@@ -45,8 +45,8 @@ object CounterApp extends IOApp {
 
 object Worker {
 
-  private def printRefContent[F[_]: Monad: ConsoleOut](number: Int, ref: Ref[F, Int]): F[Unit] =
-    ref.get.flatMap(n => ConsoleOut[F].putStrLn(s"#$number >> $n"))
+  private def printRefContent[F[_]: Monad](number: Int, ref: Ref[F, Int])(implicit F: ConsoleOut[F]): F[Unit] =
+    ref.get.flatMap(n => F.putStrLn(s"#$number >> $n"))
 
   final def exec[F[_]: Monad: ConsoleOut](number: Int, ref: Ref[F, Int]): F[Unit] =
     printRefContent(number, ref) *> ref.update(_ + 1) *> printRefContent(number, ref)
