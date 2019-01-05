@@ -1,14 +1,15 @@
 package com.github.gvolpe.http4s.server.endpoints
 
 import cats.effect.{ContextShift, Sync}
-import cats.implicits._
 import com.github.gvolpe.http4s.server.service.FileService
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.multipart.{Multipart, Part}
+import org.slf4j.LoggerFactory
 
-final class MultipartHttpEndpoint[F[_]: ContextShift](fileService: FileService[F])
-                                                     (implicit F: Sync[F]) extends Http4sDsl[F] {
+final class MultipartHttpEndpoint[F[_]: Sync: ContextShift](fileService: FileService[F]) extends Http4sDsl[F] {
+
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   final val service: HttpRoutes[F] =
     HttpRoutes
@@ -20,9 +21,14 @@ final class MultipartHttpEndpoint[F[_]: ContextShift](fileService: FileService[F
           req.decodeStrict[Multipart[F]] { response =>
             def filterFileTypes(part: Part[F]): Boolean = part.headers.exists(_.value.contains("filename"))
 
-            val stream = response.parts.filter(filterFileTypes).traverse(fileService.store)
-
-            Ok(stream.map(_ => s"Multipart file parsed successfully > ${response.parts}"))
+            Ok(
+              fs2.Stream
+                .emits(response.parts.filter(filterFileTypes))
+                .evalTap((p: Part[F]) => Sync[F].delay(logger.debug(s"HUUUUUUUUUUUUUGE 11: $p")))
+                .flatMap((p: Part[F]) => fileService.store(p, logger))
+                .evalTap((p: Part[F]) => Sync[F].delay(logger.error(s"HUUUUUUUUUUUUUGE 22: $p")))
+                .map((p: Part[F]) => s"Multipart file parsed successfully > $p")
+            )
           }
       }
 

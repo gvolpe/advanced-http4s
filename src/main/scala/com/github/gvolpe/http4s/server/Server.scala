@@ -2,16 +2,16 @@ package com.github.gvolpe.http4s.server
 
 import cats.data.Kleisli
 import cats.effect._
+import cats.implicits._
 import fs2.Stream
 import monix.execution.Scheduler
 import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.{Request, Response}
 
 object Server extends IOApp {
-  import org.http4s.implicits._
-  import cats.implicits._
 
   private def app[F[_]: Sync](
       ctx: Module[F]): Kleisli[F, Request[F], Response[F]] =

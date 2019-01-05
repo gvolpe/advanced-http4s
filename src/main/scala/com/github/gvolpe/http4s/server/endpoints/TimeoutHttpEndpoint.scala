@@ -11,13 +11,11 @@ import scala.util.Random
 
 class TimeoutHttpEndpoint[F[_]](implicit F: Concurrent[F], T: Timer[F]) extends Http4sDsl[F] {
 
-  import cats.implicits._
-
   val service: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / ApiVersion / "timeout" =>
       val randomDuration = FiniteDuration(Random.nextInt(3) * 1000L, TimeUnit.MILLISECONDS)
       val response = Ok("delayed response")
-      F.race(response, T.sleep(randomDuration) *> GatewayTimeout()).map(_.merge)
+      Concurrent.timeoutTo(response, randomDuration, GatewayTimeout())
   }
 
 }
