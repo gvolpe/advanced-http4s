@@ -55,9 +55,9 @@ Authentication
 fs2 examples
 ============
 
-In the fs2 package you'll find some practical examples of the few things it's possible to build with this powerful streaming library. This might serve as a starting point, your creativity will do the rest.
+In the `fs2` package you'll find some practical examples of the few things it's possible to build with this powerful streaming library. This might serve as a starting point, your creativity will do the rest.
 
-fs2.async package
+fs2 package
 ------------------
 
 Apart from the use of the three core types `Stream[F, O]`, `Pipe[F, I, O]` and `Sink[F, I]` you'll find examples of use of the following types:
@@ -65,8 +65,19 @@ Apart from the use of the three core types `Stream[F, O]`, `Pipe[F, I, O]` and `
 - `Topic[F, A]`
 - `Signal[F, A]`
 - `Queue[F, A]`
+
+cats-effect examples
+====================
+
+In the `cats_effect` package, you'll find some practical examples of some Cats-Effect data types
+
+cats_effect package
+-----------------------
+
+You'll find examples of use of the following types:
+
 - `Ref[F, A]`
-- `Promise[F, A]`
+- `Deferred[F, A]` (previously named `Promise[F, A]` in fs2)
 - `Semaphore[F]`
 
 In addition to the use of some other functions useful in Parallel and Concurrent scenarios.

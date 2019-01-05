@@ -1,30 +1,33 @@
 package com.github.gvolpe.http4s.client
 
-import cats.effect.Effect
-import com.github.gvolpe.http4s.StreamUtils
-import fs2.StreamApp.ExitCode
-import fs2.{Stream, StreamApp}
+import cats.effect._
+import cats.implicits._
+import fs2.Stream
 import io.circe.Json
-import jawn.Facade
-import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
-import org.http4s.client.blaze.Http1Client
+import jawn.RawFacade
+import monix.execution.Scheduler
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.{Request, Uri}
 
-object StreamClient extends HttpClient[Task]
+object StreamClient extends IOApp {
 
-class HttpClient[F[_]](implicit F: Effect[F], S: StreamUtils[F]) extends StreamApp {
+  implicit final val jsonFacade: RawFacade[Json] =
+    io.circe.jawn.CirceSupportParser.facade
 
-  implicit val jsonFacade: Facade[Json] = io.circe.jawn.CirceSupportParser.facade
-
-  override def stream(args: List[String], requestShutdown: F[Unit]): Stream[F, ExitCode] = {
-    Http1Client.stream[F]().flatMap { client =>
+  def stream[F[_]: ConcurrentEffect: ConsoleOut]: Stream[F, Unit] =
+    BlazeClientBuilder[F](Scheduler.global).stream.flatMap { client =>
       val request = Request[F](uri = Uri.uri("http://localhost:8080/v1/dirs?depth=3"))
       for {
-        response <- client.streaming(request)(_.body.chunks.through(fs2.text.utf8DecodeC))
-        _        <- S.putStr(response)
+        response <- client.stream(request).flatMap(_.body.chunks.through(fs2.text.utf8DecodeC))
+        _        <- Stream.eval(ConsoleOut[F].putStr(response))
       } yield ()
-    }.drain
+    }
+
+  override def run(args: List[String]): IO[ExitCode] = {
+    // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
+    implicit val console: Console[IO] = cats.effect.Console.io
+
+    stream[IO].compile.drain.as(ExitCode.Success)
   }
 
 }

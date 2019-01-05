@@ -1,30 +1,41 @@
 package com.github.gvolpe.http4s.server
 
-import cats.effect.Effect
-import fs2.StreamApp.ExitCode
-import fs2.{Scheduler, Stream, StreamApp}
-import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
-import org.http4s.client.blaze.Http1Client
-import org.http4s.server.blaze.BlazeBuilder
+import cats.data.Kleisli
+import cats.effect._
+import cats.implicits._
+import fs2.Stream
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import monix.execution.Scheduler
+import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.implicits._
+import org.http4s.server.Router
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.{Request, Response}
 
-object Server extends HttpServer[Task]
+object Server extends IOApp {
 
-class HttpServer[F[_]](implicit F: Effect[F]) extends StreamApp[F] {
+  val ioScheduler = Scheduler.io()
 
-  override def stream(args: List[String], requestShutdown: F[Unit]): Stream[F, ExitCode] =
-    Scheduler(corePoolSize = 2).flatMap { implicit scheduler =>
-      for {
-        client   <- Http1Client.stream[F]()
-        ctx      <- Stream(new Module[F](client))
-        exitCode <- BlazeBuilder[F]
-                      .bindHttp(8080, "0.0.0.0")
-                      .mountService(ctx.fileHttpEndpoint, s"/${endpoints.ApiVersion}")
-                      .mountService(ctx.nonStreamFileHttpEndpoint, s"/${endpoints.ApiVersion}/nonstream")
-                      .mountService(ctx.httpServices)
-                      .mountService(ctx.basicAuthHttpEndpoint, s"/${endpoints.ApiVersion}/protected")
-                      .serve
-      } yield exitCode
-    }
+  private def app[F[_]: Sync](
+      ctx: Module[F]): Kleisli[F, Request[F], Response[F]] =
+    Router(
+      "/" -> ctx.httpServices,
+      s"/${endpoints.ApiVersion}" -> ctx.fileHttpEndpoint,
+      s"/${endpoints.ApiVersion}/nonstream" -> ctx.nonStreamFileHttpEndpoint,
+      s"/${endpoints.ApiVersion}/protected" -> ctx.basicAuthHttpEndpoint
+    ).orNotFound
 
+  def stream[F[_]: ConcurrentEffect: Timer: ContextShift]: Stream[F, ExitCode] =
+    for {
+      client    <- BlazeClientBuilder[F](Scheduler.global).stream
+      logger    <- Stream.eval(Slf4jLogger.create[F])
+      ctx       <- Stream(new Module[F](client, logger))
+      exitCode  <- BlazeServerBuilder[F]
+        .bindHttp(8080, "0.0.0.0")
+        .withHttpApp(app(ctx))
+        .serve
+    } yield exitCode
+
+  override def run(args: List[String]): IO[ExitCode] =
+    stream[IO].compile.drain.as(ExitCode.Success)
 }

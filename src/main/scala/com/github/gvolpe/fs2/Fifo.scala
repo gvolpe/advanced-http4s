@@ -1,43 +1,42 @@
 package com.github.gvolpe.fs2
 
-import cats.effect.{Effect, IO}
-import fs2.StreamApp.ExitCode
-import fs2.async.mutable.Queue
-import fs2.{Scheduler, Stream, StreamApp, async}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-
-object FifoApp extends Fifo[IO]
+import cats.effect._
+import fs2.Stream
+import fs2.concurrent.Queue
+import cats.implicits._
 
 /**
-  * Represents a FIFO (First IN First OUT) system built on top of two [[fs2.async.mutable.Queue]].
+  * Represents a FIFO (First IN First OUT) system built on top of two [[fs2.concurrent.Queue]].
   *
   * q1 has a buffer size of 1 while q2 has a buffer size of 100 so you will notice the buffering when
   * pulling elements out of the q2.
   * */
-class Fifo[F[_]: Effect] extends StreamApp[F] {
+object FifoApp extends IOApp {
 
-  override def stream(args: List[String], requestShutdown: F[Unit]): fs2.Stream[F, ExitCode] =
-    Scheduler(corePoolSize = 4).flatMap { implicit S =>
-      for {
-        q1 <- Stream.eval(async.boundedQueue[F, Int](1))
-        q2 <- Stream.eval(async.boundedQueue[F, Int](100))
-        bp = new Buffering[F](q1, q2)
-        ec <- S.delay(Stream.emit(ExitCode.Success).covary[F], 5.seconds) concurrently bp.start.drain
-      } yield ec
-    }
+  def stream[F[_]: Concurrent: ConsoleOut]: F[Unit] =
+    for {
+      q1 <- Queue.bounded[F, Int](1)
+      q2 <- Queue.bounded[F, Int](100)
+      _  <- Buffering.exec(q1, q2).compile.drain
+    } yield ()
+
+  override def run(args: List[String]): IO[ExitCode] = {
+    // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
+    implicit val console: Console[IO] = cats.effect.Console.io
+
+    stream[IO].as(ExitCode.Success)
+  }
 
 }
 
-class Buffering[F[_]](q1: Queue[F, Int], q2: Queue[F, Int])(implicit F: Effect[F]) {
+object Buffering {
 
-  def start: Stream[F, Unit] =
+  def exec[F[_]](q1: Queue[F, Int], q2: Queue[F, Int])(implicit F: Concurrent[F], C: ConsoleOut[F]): Stream[F, Unit] =
     Stream(
       Stream.range(0, 1000).covary[F] to q1.enqueue,
       q1.dequeue to q2.enqueue,
       //.map won't work here as you're trying to map a pure value with a side effect. Use `evalMap` instead.
-      q2.dequeue.evalMap(n => F.delay(println(s"Pulling out $n from Queue #2")))
-    ).join(3)
+      q2.dequeue.evalMap(n => C.putStrLn(s"Pulling out $n from Queue #2"))
+    ).parJoin(3)
 
 }

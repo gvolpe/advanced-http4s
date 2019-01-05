@@ -2,49 +2,61 @@ package com.github.gvolpe.http4s.client
 
 import java.net.URL
 
-import cats.effect.Effect
-import cats.syntax.flatMap._
-import cats.syntax.functor._
-import com.github.gvolpe.http4s.StreamUtils
-import fs2.StreamApp.ExitCode
-import fs2.{Scheduler, Stream, StreamApp}
-import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
-import org.http4s.Method._
-import org.http4s.client.blaze.Http1Client
-import org.http4s.client.dsl.Http4sClientDsl
+import cats.effect._
+import fs2.Stream
+import monix.execution.Scheduler
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Multipart, Part}
-import org.http4s.{MediaType, Uri}
+import org.http4s.{MediaType, Method, Request, Uri}
+import cats.implicits._
 
-object MultipartClient extends MultipartHttpClient[Task]
+object MultipartClient extends IOApp {
 
-class MultipartHttpClient[F[_]](implicit F: Effect[F], S: StreamUtils[F]) extends StreamApp with Http4sClientDsl[F] {
+  private def image[F[_]: Sync]: F[URL] =
+    Sync[F].delay(getClass.getResource("/rick.jpg"))
 
-  private val image: F[URL] = F.delay(getClass.getResource("/rick.jpg"))
-
-  private def multipart(url: URL) = Multipart[F](
-    Vector(
-      Part.formData("name", "gvolpe"),
-      Part.fileData("rick", url, `Content-Type`(MediaType.`image/png`))
+  private def multipart[F[_]: Sync: ContextShift](url: URL) =
+    Multipart[F](
+      Vector(
+        Part.formData("name", "gvolpe"),
+        Part.fileData(
+          "rick",
+          url,
+          Scheduler.global,
+          `Content-Type`(MediaType.image.png)
+        )
+      )
     )
-  )
 
-  private val request =
+  private def request[F[_]: Sync: ContextShift]: F[Request[F]] =
     for {
-      body <- image.map(multipart)
-      req  <- POST(Uri.uri("http://localhost:8080/v1/multipart"), body)
-    } yield req.replaceAllHeaders(body.headers)
+      body <- image.map(multipart[F])
+      req  <- Sync[F].delay {
+        Request[F](
+          method = Method.POST,
+          uri = Uri.uri("http://localhost:8080/v1/multipart"),
+          body = body.parts
+            .traverse(_.body)
+            .flatMap(Stream.emits)
+            .reduce(_ |+| _)
+        )
+      }
+    } yield req.withHeaders(body.headers)
 
-  override def stream(args: List[String], requestShutdown: F[Unit]): Stream[F, ExitCode] = {
-    Scheduler(corePoolSize = 2).flatMap { implicit scheduler =>
-      for {
-        client <- Http1Client.stream[F]()
-        req    <- Stream.eval(request)
-        value  <- Stream.eval(client.expect[String](req))
-        _      <- S.evalF(println(value))
-      } yield ()
-    }.drain
+  def stream[F[_]: ContextShift](implicit F: ConcurrentEffect[F], C: ConsoleOut[F]): F[Unit] =
+    for {
+      client <- F.delay(BlazeClientBuilder[F](Scheduler.global).resource)
+      req    <- request
+      value  <- client.use(_.expect[String](req))
+      _      <- C.putStrLn(value)
+    } yield ()
+
+  def run(args: List[String]): IO[ExitCode] = {
+    // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
+    implicit val console: Console[IO] = cats.effect.Console.io
+
+    stream[IO].as(ExitCode.Success)
   }
 
 }
