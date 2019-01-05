@@ -33,7 +33,7 @@ object CounterApp extends IOApp {
     stream[IO].compile.drain.as(ExitCode.Success)
 }
 
-class Worker[F[_]](number: Int, ref: Ref[F, Int])(implicit F: Effect[F]) {
+class Worker[F[_]](number: Int, ref: Ref[F, Int])(implicit F: Sync[F]) {
 
   private val sink: Sink[F, Int] =
     _.evalMap(n => F.delay(println(s"#$number >> $n")))
