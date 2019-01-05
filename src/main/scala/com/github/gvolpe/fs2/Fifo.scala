@@ -13,7 +13,7 @@ import cats.implicits._
   * */
 object FifoApp extends IOApp {
 
-  def stream[F[_]: ConcurrentEffect: ConsoleOut]: F[Unit] =
+  def stream[F[_]: Concurrent: ConsoleOut]: F[Unit] =
     for {
       q1 <- Queue.bounded[F, Int](1)
       q2 <- Queue.bounded[F, Int](100)
