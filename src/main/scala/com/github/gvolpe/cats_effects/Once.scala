@@ -24,17 +24,17 @@ import cats.implicits._
   * */
 object OnceApp extends IOApp {
 
-  def stream[F[_]: Concurrent: ConsoleOut]: fs2.Stream[F, Unit] =
+  def stream[F[_]: Concurrent: ConsoleOut]: F[Unit] =
     for {
-      p <- Stream.eval(Deferred[F, Int])
-      e <- new ConcurrentCompletion[F](p).start
-    } yield e
+      p <- Deferred[F, Int]
+      _ <- new ConcurrentCompletion[F](p).exec.compile.drain
+    } yield ()
 
   override def run(args: List[String]): IO[ExitCode] = {
     // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
     implicit val console: Console[IO] = cats.effect.Console.io
 
-    stream[IO].compile.drain.as(ExitCode.Success)
+    stream[IO].as(ExitCode.Success)
   }
 }
 
@@ -43,7 +43,7 @@ class ConcurrentCompletion[F[_]: Concurrent](p: Deferred[F, Int])(implicit C: Co
   private def attemptPromiseCompletion(n: Int): Stream[F, Unit] =
     Stream.eval(p.complete(n)).attempt.drain
 
-  def start: Stream[F, Unit] =
+  def exec: Stream[F, Unit] =
     Stream(
       attemptPromiseCompletion(1),
       attemptPromiseCompletion(2),
