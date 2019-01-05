@@ -3,7 +3,6 @@ package com.github.gvolpe.http4s.client
 import java.net.URL
 
 import cats.effect._
-import com.github.gvolpe.http4s.StreamUtils
 import fs2.Stream
 import monix.execution.Scheduler
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -45,18 +44,19 @@ object MultipartClient extends IOApp {
       }
     } yield req.withHeaders(body.headers)
 
-  def stream[F[_]: ConcurrentEffect: ContextShift](
-      implicit S: StreamUtils[F]): Stream[F, Unit] =
+  def stream[F[_]: ContextShift](implicit F: ConcurrentEffect[F], C: ConsoleOut[F]): F[Unit] =
     for {
-      client <- BlazeClientBuilder[F](Scheduler.global).stream
-      req    <- Stream.eval(request)
-      value  <- Stream.eval(client.expect[String](req))
-      _      <- S.evalF(println(value))
+      client <- F.delay(BlazeClientBuilder[F](Scheduler.global).resource)
+      req    <- request
+      value  <- client.use(_.expect[String](req))
+      _      <- C.putStrLn(value)
     } yield ()
 
-  import cats.implicits._
+  def run(args: List[String]): IO[ExitCode] = {
+    // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
+    implicit val console: Console[IO] = cats.effect.Console.io
 
-  def run(args: List[String]): IO[ExitCode] =
-    stream[IO].compile.drain.as(ExitCode.Success)
+    stream[IO].as(ExitCode.Success)
+  }
 
 }

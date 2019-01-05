@@ -4,20 +4,24 @@ import java.io.File
 import java.nio.file.Paths
 
 import cats.effect.{ContextShift, Effect}
-import com.github.gvolpe.http4s.StreamUtils
 import fs2.Stream
 import org.http4s.multipart.Part
 import org.slf4j.Logger
+import cats.implicits._
 
 import scala.concurrent.ExecutionContext
 
-class FileService[F[_]](implicit F: Effect[F], S: StreamUtils[F]) {
+class FileService[F[_]](implicit F: Effect[F]) {
+
+  private def env(key: String): F[String] =
+    F
+      .delay(sys.env.get(key))
+      .flatMap(F.fromOption(_, new Exception(s"$key environment variable not found!")))
+
+  private def file(path: String): F[File] = F.delay(new File(path))
 
   def homeDirectories(depth: Option[Int]): Stream[F, String] =
-    S.env("HOME").flatMap { maybePath =>
-      val ifEmpty = S.error("HOME environment variable not found!")
-      maybePath.fold(ifEmpty)(directories(_, depth.getOrElse(1)))
-    }
+    Stream.eval(env("HOME")).flatMap(path => directories(path, depth.getOrElse(1)))
 
   def directories(path: String, depth: Int): Stream[F, String] = {
 
@@ -29,7 +33,7 @@ class FileService[F[_]](implicit F: Effect[F], S: StreamUtils[F]) {
       else dirs ++ dirs.flatMap(x => dir(x, d - 1))
     }
 
-    S.evalF(new File(path)).flatMap { file =>
+    Stream.eval(file(path)).flatMap { file =>
       dir(file, depth)
         .map(_.getName)
         .filter(!_.startsWith("."))
