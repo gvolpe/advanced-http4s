@@ -5,6 +5,7 @@ import fs2.concurrent.{Signal, SignallingRef, Topic}
 import fs2.{Sink, Stream}
 
 import scala.concurrent.duration._
+import cats.implicits._
 
 /**
   * Single Publisher / Multiple Subscribers application implemented on top of
@@ -20,27 +21,28 @@ import scala.concurrent.duration._
 final case class Event(value: String) extends AnyVal
 
 object PubSubApp extends IOApp {
-  import cats.syntax.all._
 
-  def stream[F[_]](implicit F: ConcurrentEffect[F],
-                   T: Timer[F]): fs2.Stream[F, Unit] =
+  def stream[F[_]: ConcurrentEffect: Timer: ConsoleOut]: fs2.Stream[F, Unit] =
     for {
-      topic <- Stream.eval(Topic[F, Event](Event("")))
-      signal <- Stream.eval(SignallingRef[F, Boolean](false))
-      service = new EventService[F](topic, signal)
+      topic          <- Stream.eval(Topic[F, Event](Event("")))
+      signal         <- Stream.eval(SignallingRef[F, Boolean](false))
+      service        = new EventService[F](topic, signal)
       emitStopSignal = Stream.sleep[F](15.seconds) *> Stream.eval(signal.set(true))
-      starts = service.startPublisher concurrently service.startSubscribers
-      _ <- Stream(emitStopSignal, starts).parJoin(2)
+      starts         = service.startPublisher concurrently service.startSubscribers
+      _              <- Stream(emitStopSignal, starts).parJoin(2)
     } yield ()
 
-  override def run(args: List[String]): IO[ExitCode] =
-    stream[IO].compile.drain.as(ExitCode.Success)
+  override def run(args: List[String]): IO[ExitCode] = {
+    // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
+    implicit val console: Console[IO] = cats.effect.Console.io
 
+    stream[IO].compile.drain.as(ExitCode.Success)
+  }
 }
 
-class EventService[F[_]: Timer](
+class EventService[F[_]: Concurrent: Timer](
     eventsTopic: Topic[F, Event],
-    interrupter: Signal[F, Boolean])(implicit F: Concurrent[F]) {
+    interrupter: Signal[F, Boolean])(implicit F: ConsoleOut[F]) {
 
   // Publishing events every one second until signaling interruption
   def startPublisher: Stream[F, Unit] =
@@ -59,8 +61,7 @@ class EventService[F[_]: Timer](
     val s3: Stream[F, Event] = eventsTopic.subscribe(10).delayBy(10.seconds)
 
     def sink(subscriberNumber: Int): Sink[F, Event] =
-      _.evalMap(e =>
-        F.delay(println(s"Subscriber #$subscriberNumber processing event: $e")))
+      _.evalMap(e => F.putStrLn(s"Subscriber #$subscriberNumber processing event: $e"))
 
     Stream(s1 to sink(1), s2 to sink(2), s3 to sink(3)).parJoin(3)
   }
