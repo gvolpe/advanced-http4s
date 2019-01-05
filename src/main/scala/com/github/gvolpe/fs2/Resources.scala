@@ -1,9 +1,10 @@
 package com.github.gvolpe.fs2
 
+import cats.Monad
 import cats.effect._
 import cats.effect.concurrent.Semaphore
-import cats.syntax.functor._
-import fs2.Stream
+import cats.implicits._
+import cats.temp.par._
 
 import scala.concurrent.duration._
 
@@ -42,30 +43,34 @@ import scala.concurrent.duration._
   * */
 object ResourcesApp extends IOApp {
 
-  def stream[F[_]: ConcurrentEffect: Timer]: fs2.Stream[F, Unit] =
+  def stream[F[_]: Concurrent: NonEmptyPar: Timer: ConsoleOut]: F[Unit] =
       for {
-        s   <- Stream.eval(Semaphore[F](1))
+        s   <- Semaphore[F](1)
         r1  = new PreciousResource[F]("R1", s)
         r2  = new PreciousResource[F]("R2", s)
         r3  = new PreciousResource[F]("R3", s)
-        _  <- Stream(r1.use, r2.use, r3.use).parJoin(3)
+        _  <- (r1.use, r2.use, r3.use).parTupled.void
       } yield ()
 
-  override def run(args: List[String]): IO[ExitCode] =
-    stream[IO].compile.drain.as(ExitCode.Success)
+  override def run(args: List[String]): IO[ExitCode] = {
+    // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
+    implicit val console: Console[IO] = cats.effect.Console.io
+
+    stream[IO].as(ExitCode.Success)
+  }
 
 }
 
-class PreciousResource[F[_]: Effect: Timer](name: String, s: Semaphore[F]) {
+class PreciousResource[F[_]: Monad: Timer](name: String, s: Semaphore[F])(implicit F: ConsoleOut[F]) {
 
-  def use: Stream[F, Unit] =
+  val use: F[Unit] =
     for {
-      _ <- Stream.eval(s.available.map(a => println(s"$name >> Availability: $a")))
-      _ <- Stream.eval(s.acquire)
-      _ <- Stream.eval(s.available.map(a => println(s"$name >> Started | Availability: $a")))
-      _ <- Stream.sleep(3.seconds)
-      _ <- Stream.eval(s.release)
-      _ <- Stream.eval(s.available.map(a => println(s"$name >> Done | Availability: $a")))
+      _ <- s.available.flatMap(a => F.putStrLn(s"$name >> Availability: $a"))
+      _ <- s.acquire
+      _ <- s.available.flatMap(a => F.putStrLn(s"$name >> Started | Availability: $a"))
+      _ <- Timer[F].sleep(3.seconds)
+      _ <- s.release
+      _ <- s.available.flatMap(a => F.putStrLn(s"$name >> Done | Availability: $a"))
     } yield ()
 
 }
