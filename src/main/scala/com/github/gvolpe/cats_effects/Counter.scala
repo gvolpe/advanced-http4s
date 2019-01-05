@@ -21,7 +21,7 @@ import cats.effect.concurrent.Ref
 object CounterApp extends IOApp {
   import cats.syntax.all._
 
-  def stream[F[_]: ConsoleOut](implicit F: Concurrent[F]): F[Unit] =
+  def example[F[_]: ConsoleOut](implicit F: Concurrent[F]): F[Unit] =
     for {
       ref <- Ref.of[F, Int](0)
       w1 = Worker.exec(1, ref)
@@ -39,7 +39,7 @@ object CounterApp extends IOApp {
     // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
     implicit val console: Console[IO] = cats.effect.Console.io
 
-    stream[IO].as(ExitCode.Success)
+    example[IO].as(ExitCode.Success)
   }
 }
 
