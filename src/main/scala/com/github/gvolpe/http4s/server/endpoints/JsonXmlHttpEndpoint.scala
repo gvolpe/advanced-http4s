@@ -11,8 +11,7 @@ import org.http4s.{HttpRoutes, _}
 // Docs: http://http4s.org/v0.20/entity/
 class JsonXmlHttpEndpoint[F[_]: Effect] extends Http4sDsl[F] {
 
-  implicit def jsonXmlDecoder: EntityDecoder[F, Person] =
-    jsonOf[F, Person] orElse personXmlDecoder[F]
+  implicit def jsonXmlDecoder: EntityDecoder[F, Person] = jsonOf[F, Person] orElse personXmlDecoder[F]
 
   val service: HttpRoutes[F] = HttpRoutes.of[F] {
     case GET -> Root / ApiVersion / "media" =>
