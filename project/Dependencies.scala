@@ -7,7 +7,6 @@ object Dependencies {
     val Monix       = "3.0.0-RC2"
     val Fs2         = "1.0.2"
     val Http4s      = "0.20.0-M4"
-    val Tsec        = "0.0.1-M11"
     val Circe       = "0.11.0"
     val ScalaTest   = "3.0.5"
     val ScalaCheck  = "1.14.0"
@@ -27,8 +26,6 @@ object Dependencies {
     lazy val http4sDsl      = "org.http4s"          %% "http4s-dsl"                   % Versions.Http4s
     lazy val http4sCirce    = "org.http4s"          %% "http4s-circe"                 % Versions.Http4s
     lazy val http4sXml      = "org.http4s"          %% "http4s-scala-xml"             % Versions.Http4s
-
-    lazy val tsecJwtMac     = "io.github.jmcardon"  %% "tsec-jwt-mac"                 % Versions.Tsec
 
     lazy val circeCore      = "io.circe"            %% "circe-core"                   % Versions.Circe
     lazy val circeGeneric   = "io.circe"            %% "circe-generic"                % Versions.Circe
