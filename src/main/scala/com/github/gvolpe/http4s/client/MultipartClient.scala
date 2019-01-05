@@ -10,10 +10,9 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Multipart, Part}
 import org.http4s.{MediaType, Method, Request, Uri}
+import cats.implicits._
 
 object MultipartClient extends IOApp {
-
-  import cats.implicits._
 
   private def image[F[_]: Sync]: F[URL] =
     Sync[F].delay(getClass.getResource("/rick.jpg"))
