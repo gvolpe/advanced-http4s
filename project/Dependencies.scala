@@ -3,15 +3,16 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val CatsEffect  = "1.1.0"
-    val Monix       = "3.0.0-RC2"
-    val Fs2         = "1.0.2"
-    val Http4s      = "0.20.0-M4"
-    val Circe       = "0.11.0"
-    val ScalaTest   = "3.0.5"
-    val ScalaCheck  = "1.14.0"
-    val Logback     = "1.2.3"
-    val TypesafeCfg = "1.3.3"
+    val CatsEffect   = "1.1.0"
+    val Monix        = "3.0.0-RC2"
+    val Fs2          = "1.0.2"
+    val Http4s       = "0.20.0-M4"
+    val Circe        = "0.11.0"
+    val ScalaTest    = "3.0.5"
+    val ScalaCheck   = "1.14.0"
+    val Logback      = "1.2.3"
+    val TypesafeCfg  = "1.3.3"
+    val Console4Cats = "0.5"
   }
 
   object Libraries {
@@ -32,6 +33,7 @@ object Dependencies {
 
     lazy val typesafeConfig = "com.typesafe"        %  "config"                       % Versions.TypesafeCfg
     lazy val logback        = "ch.qos.logback"      %  "logback-classic"              % Versions.Logback
+    lazy val console4cats   = "com.github.gvolpe"   %% "console4cats"                 % Versions.Console4Cats
 
     lazy val scalaTest      = "org.scalatest"       %% "scalatest"                    % Versions.ScalaTest   % Test
     lazy val scalaCheck     = "org.scalacheck"      %% "scalacheck"                   % Versions.ScalaCheck  % Test

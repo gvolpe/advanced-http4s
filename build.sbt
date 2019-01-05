@@ -30,9 +30,11 @@ lazy val root = (project in file("."))
       Libraries.circeGeneric,
       Libraries.typesafeConfig,
       Libraries.logback,
+      Libraries.console4cats,
       Libraries.scalaTest,
       Libraries.scalaCheck
     ),
+    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4"),
     addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.9" cross CrossVersion.binary),
     // Decomment if it's too annoying!
     scalacOptions := scalacOptions.value.filter(_ != "-Xfatal-warnings"),
