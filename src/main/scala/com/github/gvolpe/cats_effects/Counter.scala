@@ -44,7 +44,8 @@ object CounterApp extends IOApp {
 }
 
 object Worker {
-  import cats.implicits._
+  import cats.syntax.flatMap._
+  import cats.syntax.apply._
 
   private def printRefContent[F[_]: Monad: ConsoleOut](number: Int, ref: Ref[F, Int]): F[Unit] =
     ref.get.flatMap(n => ConsoleOut[F].putStrLn(s"#$number >> $n"))
