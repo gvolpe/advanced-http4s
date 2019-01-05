@@ -20,6 +20,8 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       Libraries.catsEffect,
       Libraries.monix,
+      Libraries.console4cats,
+      Libraries.catsPar,
       Libraries.fs2Core,
       Libraries.http4sServer,
       Libraries.http4sClient,
@@ -30,7 +32,6 @@ lazy val root = (project in file("."))
       Libraries.circeGeneric,
       Libraries.typesafeConfig,
       Libraries.logback,
-      Libraries.console4cats,
       Libraries.scalaTest,
       Libraries.scalaCheck
     ),

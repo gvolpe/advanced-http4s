@@ -2,8 +2,8 @@ package com.github.gvolpe.cats_effects
 
 import cats.effect._
 import cats.effect.concurrent.Deferred
-import fs2.Stream
 import cats.implicits._
+import cats.temp.par._
 
 /**
   * Demonstrate the use of [[cats.effect.concurrent.Deferred]]
@@ -24,10 +24,10 @@ import cats.implicits._
   * */
 object OnceApp extends IOApp {
 
-  def stream[F[_]: Concurrent: ConsoleOut]: F[Unit] =
+  def stream[F[_]: Concurrent: Par: ConsoleOut]: F[Unit] =
     for {
       p <- Deferred[F, Int]
-      _ <- new ConcurrentCompletion[F](p).exec.compile.drain
+      _ <- new ConcurrentCompletion[F](p).exec
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] = {
@@ -36,18 +36,17 @@ object OnceApp extends IOApp {
 
     stream[IO].as(ExitCode.Success)
   }
+
 }
 
-class ConcurrentCompletion[F[_]: Concurrent](p: Deferred[F, Int])(implicit C: ConsoleOut[F]) {
 
-  private def attemptPromiseCompletion(n: Int): Stream[F, Unit] =
-    Stream.eval(p.complete(n)).attempt.drain
+class ConcurrentCompletion[F[_]: Sync: Par](p: Deferred[F, Int])(implicit F: ConsoleOut[F]) {
 
-  def exec: Stream[F, Unit] =
-    Stream(
-      attemptPromiseCompletion(1),
-      attemptPromiseCompletion(2),
-      Stream.eval(p.get).evalMap(n => C.putStrLn(s"Result: $n"))
-    ).parJoin(3)
+  val exec: F[Unit] =
+    List(
+      p.complete(1),
+      p.complete(2),
+      p.get.flatMap(n => F.putStrLn(s"Result: $n"))
+    ).parTraverse(_.attempt).void
 
 }
