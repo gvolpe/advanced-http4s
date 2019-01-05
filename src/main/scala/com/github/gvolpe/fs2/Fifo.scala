@@ -13,25 +13,25 @@ import cats.implicits._
   * */
 object FifoApp extends IOApp {
 
-  def stream[F[_]: ConcurrentEffect: ConsoleOut]: fs2.Stream[F, Unit] =
+  def stream[F[_]: ConcurrentEffect: ConsoleOut]: F[Unit] =
     for {
-      q1 <- Stream.eval(Queue.bounded[F, Int](1))
-      q2 <- Stream.eval(Queue.bounded[F, Int](100))
-      _  <- new Buffering[F](q1, q2).start
+      q1 <- Queue.bounded[F, Int](1)
+      q2 <- Queue.bounded[F, Int](100)
+      _  <- Buffering.exec(q1, q2).compile.drain
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] = {
     // TODO: When this PR is merged: https://github.com/gvolpe/console4cats/pull/22, prefer `import cats.effect.Console.implicits._`
     implicit val console: Console[IO] = cats.effect.Console.io
 
-    stream[IO].compile.drain.as(ExitCode.Success)
+    stream[IO].as(ExitCode.Success)
   }
 
 }
 
-class Buffering[F[_]](q1: Queue[F, Int], q2: Queue[F, Int])(implicit F: Concurrent[F], C: ConsoleOut[F]) {
+object Buffering {
 
-  def start: Stream[F, Unit] =
+  def exec[F[_]](q1: Queue[F, Int], q2: Queue[F, Int])(implicit F: Concurrent[F], C: ConsoleOut[F]): Stream[F, Unit] =
     Stream(
       Stream.range(0, 1000).covary[F] to q1.enqueue,
       q1.dequeue to q2.enqueue,
