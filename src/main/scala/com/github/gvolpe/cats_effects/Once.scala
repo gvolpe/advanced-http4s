@@ -38,7 +38,7 @@ object OnceApp extends IOApp {
   }
 }
 
-class ConcurrentCompletion[F[_]](p: Deferred[F, Int])(implicit F: Concurrent[F], C: ConsoleOut[F]) {
+class ConcurrentCompletion[F[_]: Concurrent](p: Deferred[F, Int])(implicit C: ConsoleOut[F]) {
 
   private def attemptPromiseCompletion(n: Int): Stream[F, Unit] =
     Stream.eval(p.complete(n)).attempt.drain
