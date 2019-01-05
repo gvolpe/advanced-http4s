@@ -9,11 +9,11 @@ import org.http4s.HttpRoutes
 import org.http4s.client.Client
 import org.http4s.server.HttpMiddleware
 import org.http4s.server.middleware.{AutoSlash, ChunkAggregator, GZip, Timeout}
+import io.chrisdavenport.log4cats.Logger
 
 import scala.concurrent.duration._
 
-class Module[F[_]: ContextShift: Timer](client: Client[F])(
-    implicit F: ConcurrentEffect[F]) {
+class Module[F[_]: ConcurrentEffect: ContextShift: Timer](client: Client[F], logger: Logger[F]) {
 
   private val fileService = new FileService[F]
 
@@ -43,7 +43,7 @@ class Module[F[_]: ContextShift: Timer](client: Client[F])(
     new JsonXmlHttpEndpoint[F].service
 
   private val multipartHttpEndpoint: HttpRoutes[F] =
-    new MultipartHttpEndpoint[F](fileService).service
+      new MultipartHttpEndpoint[F](fileService, logger).service
 
   private val gitHubHttpEndpoint: HttpRoutes[F] =
     new GitHubHttpEndpoint[F](gitHubService).service

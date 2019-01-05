@@ -4,6 +4,7 @@ import cats.data.Kleisli
 import cats.effect._
 import cats.implicits._
 import fs2.Stream
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import monix.execution.Scheduler
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
@@ -25,7 +26,8 @@ object Server extends IOApp {
   def stream[F[_]: ConcurrentEffect: Timer: ContextShift]: Stream[F, ExitCode] =
     for {
       client    <- BlazeClientBuilder[F](Scheduler.global).stream
-      ctx       <- Stream(new Module[F](client))
+      logger    <- Stream.eval(Slf4jLogger.create[F])
+      ctx       <- Stream(new Module[F](client, logger))
       exitCode  <- BlazeServerBuilder[F]
         .bindHttp(8080, "0.0.0.0")
         .withHttpApp(app(ctx))

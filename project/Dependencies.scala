@@ -5,6 +5,7 @@ object Dependencies {
   object Versions {
     val CatsEffect   = "1.1.0"
     val Monix        = "3.0.0-RC2"
+    val Logs4Cats    = "0.2.0"
     val Console4Cats = "0.5"
     val CatsPar      = "0.2.0"
     val Fs2          = "1.0.2"
@@ -14,12 +15,12 @@ object Dependencies {
     val ScalaCheck   = "1.14.0"
     val Logback      = "1.2.3"
     val TypesafeCfg  = "1.3.3"
-
   }
 
   object Libraries {
     lazy val catsEffect     = "org.typelevel"       %% "cats-effect"                  % Versions.CatsEffect
     lazy val monix          = "io.monix"            %% "monix"                        % Versions.Monix
+    lazy val logs4cats      = "io.chrisdavenport"   %% "log4cats-slf4j"               % Versions.Logs4Cats
     lazy val console4cats   = "com.github.gvolpe"   %% "console4cats"                 % Versions.Console4Cats
     lazy val catsPar        = "io.chrisdavenport"   %% "cats-par"                     % Versions.CatsPar
     

@@ -6,8 +6,8 @@ import java.nio.file.Paths
 import cats.effect.{ContextShift, Effect}
 import fs2.Stream
 import org.http4s.multipart.Part
-import org.slf4j.Logger
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 
 import scala.concurrent.ExecutionContext
 
@@ -41,10 +41,10 @@ class FileService[F[_]](implicit F: Effect[F]) {
     }
   }
 
-  def store(part: Part[F], logger: Logger)(implicit cs: ContextShift[F]): Stream[F, Part[F]] =
+  def store(logger: Logger[F])(part: Part[F])(implicit cs: ContextShift[F]): Stream[F, Part[F]] =
     part.body
       .to(fs2.io.file.writeAll(Paths.get("/tmp/sample"), ExecutionContext.global)) // TODO: BUG ?
       .flatMap(_ => fs2.Stream(part))
-      .evalTap((p: Part[F]) => F.delay(logger.debug(s"CONTINUE ?????????????????????: $p")))
+      .evalTap((p: Part[F]) => logger.debug(s"CONTINUE ?????????????????????: $p"))
 
 }
