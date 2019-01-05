@@ -14,6 +14,8 @@ import org.http4s.{Request, Response}
 
 object Server extends IOApp {
 
+  val ioScheduler = Scheduler.io()
+
   private def app[F[_]: Sync](
       ctx: Module[F]): Kleisli[F, Request[F], Response[F]] =
     Router(
