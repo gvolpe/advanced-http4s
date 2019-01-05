@@ -1,4 +1,4 @@
-package com.github.gvolpe.fs2
+package com.github.gvolpe.cats_effects
 
 import cats.Monad
 import cats.effect._
