@@ -19,7 +19,8 @@ import cats.effect.concurrent.Ref
   * #3 >> 3
   * */
 object CounterApp extends IOApp {
-  import cats.syntax.all._
+  import cats.syntax.flatMap._
+  import cats.syntax.functor._
 
   def example[F[_]: ConsoleOut](implicit F: Concurrent[F]): F[Unit] =
     for {
